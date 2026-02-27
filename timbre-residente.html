@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Portero — Depto</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --oro: #C9A84C;
+    --oro-claro: #E8D08A;
+    --bg: #111;
+    --panel: #1c1c1c;
+    --texto: #e8e0d0;
+    --texto-suave: #666;
+    --rojo: #c0392b;
+    --verde: #27ae60;
+    --azul: #2980b9;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--texto);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 16px;
+    overflow: hidden;
+  }
+
+  /* =========== PANTALLA: STANDBY =========== */
+  #pantalla-standby {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+
+  .standby-depto {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 100px;
+    color: var(--oro);
+    line-height: 1;
+    text-shadow: 0 0 60px rgba(201,168,76,0.2);
+  }
+
+  .standby-label {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    margin-top: -16px;
+  }
+
+  .standby-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--verde);
+  }
+
+  .dot-verde {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--verde);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .standby-info {
+    font-size: 12px;
+    color: #444;
+    line-height: 1.6;
+    max-width: 280px;
+  }
+
+  /* =========== PANTALLA: LLAMADA ENTRANTE =========== */
+  #pantalla-llamada {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100vh;
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 50;
+  }
+
+  /* Video del visitante — pantalla casi completa */
+  #video-visitante {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+    transform: scaleX(-1);
+    background: #111;
+  }
+
+  /* Overlay oscuro superior e inferior */
+  .overlay-top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 120px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 20px;
+    gap: 4px;
+  }
+
+  .overlay-bottom {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 180px;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    z-index: 10;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 40px;
+    gap: 40px;
+  }
+
+  .caller-info-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+  }
+
+  .caller-info-depto {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: #fff;
+    letter-spacing: 2px;
+  }
+
+  /* Botones de acción */
+  .btn-accion {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    transition: transform 0.15s;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  }
+
+  .btn-accion:active { transform: scale(0.88); }
+
+  .btn-atender {
+    background: var(--verde);
+    box-shadow: 0 4px 24px rgba(39,174,96,0.4);
+  }
+
+  .btn-rechazar {
+    background: var(--rojo);
+    box-shadow: 0 4px 24px rgba(192,57,43,0.4);
+  }
+
+  .btn-colgar-llamada {
+    background: var(--rojo);
+    box-shadow: 0 4px 24px rgba(192,57,43,0.4);
+    display: none;
+  }
+
+  /* Estado texto durante llamada */
+  .llamada-estado {
+    position: absolute;
+    bottom: 120px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 1px;
+    z-index: 10;
+  }
+
+  /* RINGTONE visual */
+  .ring-anim {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    animation: ring-flash 0.8s ease-in-out infinite;
+  }
+
+  @keyframes ring-flash {
+    0%, 100% { box-shadow: inset 0 0 0 0 rgba(201,168,76,0); }
+    50% { box-shadow: inset 0 0 80px 20px rgba(201,168,76,0.15); }
+  }
+
+  /* =========== PANTALLA: CONFIGURACIÓN =========== */
+  #pantalla-config {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+  }
+
+  .config-titulo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--oro);
+    letter-spacing: 2px;
+  }
+
+  .config-desc {
+    font-size: 13px;
+    color: var(--texto-suave);
+    line-height: 1.6;
+  }
+
+  .input-depto {
+    background: var(--panel);
+    border: 1px solid #333;
+    border-radius: 12px;
+    color: var(--texto);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    width: 120px;
+    height: 80px;
+    text-align: center;
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  .input-depto:focus { border-color: var(--oro); }
+
+  .btn-configurar {
+    background: var(--oro);
+    color: #111;
+    border: none;
+    border-radius: 30px;
+    padding: 14px 32px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .btn-configurar:active { transform: scale(0.97); }
+
+  /* Audio oculto */
+  #audio-ring { display: none; }
+  #audio-remoto { display: none; }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #333;
+    color: var(--texto);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 200;
+  }
+
+  #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- PANTALLA CONFIG (primera vez) -->
+<div id="pantalla-config">
+  <div class="config-titulo">Configurar Depto</div>
+  <div class="config-desc">Ingresá el número de tu departamento para recibir llamadas del portero.</div>
+  <input type="number" class="input-depto" id="input-num-depto" placeholder="5" min="1" max="99">
+  <button class="btn-configurar" onclick="configurarDepto()">Activar Portero</button>
+</div>
+
+<!-- PANTALLA STANDBY -->
+<div id="pantalla-standby" style="display:none">
+  <div class="standby-label">Portero Digital</div>
+  <div class="standby-depto" id="standby-num">—</div>
+  <div class="standby-label" style="margin-top:-8px">Departamento</div>
+
+  <div class="standby-status">
+    <div class="dot-verde"></div>
+    <span>Timbre activo</span>
+  </div>
+
+  <div class="standby-info">
+    Cuando alguien toque tu timbre desde la puerta del edificio, recibirás la llamada aquí y podrás verlos y hablar con ellos.
+  </div>
+
+  <div style="margin-top:8px">
+    <button onclick="cambiarDepto()" style="background:none;border:none;color:#444;font-size:12px;cursor:pointer;text-decoration:underline">
+      Cambiar departamento
+    </button>
+  </div>
+</div>
+
+<!-- PANTALLA LLAMADA ENTRANTE / EN CURSO -->
+<div id="pantalla-llamada">
+  <div class="ring-anim" id="ring-anim"></div>
+
+  <video id="video-visitante" autoplay playsinline muted></video>
+
+  <div class="overlay-top">
+    <div class="caller-info-label">Llamada desde la puerta</div>
+    <div class="caller-info-depto" id="edificio-llamada">Blanco Encalada 3225</div>
+  </div>
+
+  <div class="llamada-estado" id="llamada-estado"></div>
+
+  <div class="overlay-bottom" id="controles-llamada">
+    <!-- Entrante: atender / rechazar -->
+    <div id="btns-entrante" style="display:flex;gap:40px">
+      <button class="btn-accion btn-rechazar" onclick="rechazarLlamada()">📵</button>
+      <button class="btn-accion btn-atender" onclick="atenderLlamada()">📞</button>
+    </div>
+    <!-- En curso: colgar -->
+    <button class="btn-accion btn-colgar-llamada" id="btn-colgar-activo" onclick="colgarLlamada()">📵</button>
+  </div>
+</div>
+
+<!-- Audios -->
+<audio id="audio-ring" loop></audio>
+<audio id="audio-remoto" autoplay playsinline></audio>
+
+<div id="toast"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN — Reemplazá con tu firebaseConfig real
+// ============================================================
+const CONFIG = {
+  direccion: "Blanco Encalada 3225",
+  firebase: {
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_PROYECTO.firebaseapp.com",
+    databaseURL: "https://TU_PROYECTO-default-rtdb.firebaseio.com",
+    projectId: "TU_PROYECTO",
+    storageBucket: "TU_PROYECTO.appspot.com",
+    messagingSenderId: "TU_SENDER_ID",
+    appId: "TU_APP_ID"
+  }
+};
+// ============================================================
+
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' }
+  ]
+};
+
+let db, myDepto, callRef, pc, remoteStream;
+let escuchandoRef = null;
+let llamadaActualId = null;
+
+// Sonido de ring generado con Web Audio (sin archivo externo)
+let audioCtx = null;
+let ringInterval = null;
+
+function generarRing() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const freqs = [880, 1100];
+  freqs.forEach((f, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = f;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.1);
+    gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + i * 0.1 + 0.05);
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + i * 0.1 + 0.25);
+    osc.start(audioCtx.currentTime + i * 0.1);
+    osc.stop(audioCtx.currentTime + i * 0.1 + 0.25);
+  });
+}
+
+function iniciarRing() {
+  generarRing();
+  ringInterval = setInterval(generarRing, 1500);
+}
+
+function detenerRing() {
+  if (ringInterval) { clearInterval(ringInterval); ringInterval = null; }
+}
+
+// INIT
+function init() {
+  firebase.initializeApp(CONFIG.firebase);
+  db = firebase.database();
+  document.getElementById('edificio-llamada').textContent = CONFIG.direccion;
+
+  // Leer depto desde URL params o localStorage
+  const params = new URLSearchParams(window.location.search);
+  const deptoParam = params.get('depto');
+
+  if (deptoParam && !isNaN(deptoParam)) {
+    guardarYActivar(parseInt(deptoParam));
+  } else {
+    const deptoGuardado = localStorage.getItem('portero_depto');
+    if (deptoGuardado) {
+      guardarYActivar(parseInt(deptoGuardado));
+    } else {
+      mostrarConfig();
+    }
+  }
+}
+
+function mostrarConfig() {
+  document.getElementById('pantalla-config').style.display = 'flex';
+  document.getElementById('pantalla-standby').style.display = 'none';
+}
+
+function configurarDepto() {
+  const input = document.getElementById('input-num-depto');
+  const num = parseInt(input.value);
+  if (!num || num < 1 || num > 99) {
+    toast('Ingresá un número de depto válido');
+    return;
+  }
+  guardarYActivar(num);
+}
+
+function guardarYActivar(num) {
+  myDepto = num;
+  localStorage.setItem('portero_depto', num);
+  document.getElementById('standby-num').textContent = num;
+  document.getElementById('pantalla-config').style.display = 'none';
+  document.getElementById('pantalla-standby').style.display = 'flex';
+  escucharLlamadas();
+}
+
+function cambiarDepto() {
+  if (escuchandoRef) { escuchandoRef.off(); escuchandoRef = null; }
+  localStorage.removeItem('portero_depto');
+  mostrarConfig();
+}
+
+// ESCUCHAR LLAMADAS ENTRANTES
+function escucharLlamadas() {
+  if (escuchandoRef) escuchandoRef.off();
+
+  const ref = db.ref('calls');
+  escuchandoRef = ref.orderByChild('deptoId').equalTo(myDepto);
+
+  escuchandoRef.on('child_added', async (snap) => {
+    const call = snap.val();
+    if (!call) return;
+
+    // Solo procesar llamadas recientes (últimos 30 segundos) y en estado "ringing"
+    const ahora = Date.now();
+    const edad = ahora - (call.timestamp || 0);
+    if (call.status !== 'ringing' || edad > 30000) return;
+
+    llamadaActualId = snap.key;
+    callRef = db.ref('calls/' + llamadaActualId);
+
+    mostrarLlamadaEntrante();
+  });
+
+  // También escuchar cambios en llamadas existentes
+  escuchandoRef.on('child_changed', (snap) => {
+    const call = snap.val();
+    if (!call) return;
+    if (call.status === 'ringing' && snap.key !== llamadaActualId) {
+      const ahora = Date.now();
+      const edad = ahora - (call.timestamp || 0);
+      if (edad > 30000) return;
+      llamadaActualId = snap.key;
+      callRef = db.ref('calls/' + llamadaActualId);
+      mostrarLlamadaEntrante();
+    }
+  });
+}
+
+// MOSTRAR LLAMADA ENTRANTE
+function mostrarLlamadaEntrante() {
+  document.getElementById('pantalla-standby').style.display = 'none';
+  document.getElementById('pantalla-llamada').style.display = 'flex';
+  document.getElementById('btns-entrante').style.display = 'flex';
+  document.getElementById('btn-colgar-activo').style.display = 'none';
+  document.getElementById('ring-anim').style.display = 'block';
+  document.getElementById('llamada-estado').textContent = 'Tocando el timbre...';
+
+  // Iniciar ring
+  iniciarRing();
+
+  // Auto-rechazar si no atiende en 40 segundos
+  setTimeout(() => {
+    if (document.getElementById('pantalla-llamada').style.display !== 'none' &&
+        document.getElementById('btns-entrante').style.display !== 'none') {
+      rechazarLlamada();
+    }
+  }, 40000);
+}
+
+// ATENDER LLAMADA
+async function atenderLlamada() {
+  detenerRing();
+  document.getElementById('ring-anim').style.display = 'none';
+  document.getElementById('btns-entrante').style.display = 'none';
+  document.getElementById('btn-colgar-activo').style.display = 'flex';
+  document.getElementById('llamada-estado').textContent = 'Conectando...';
+
+  try {
+    // Obtener micrófono del residente (sin video propio)
+    const localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+
+    // Crear PeerConnection
+    pc = new RTCPeerConnection(ICE_SERVERS);
+
+    // Agregar audio del residente
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+    // Cuando llegue el video/audio del visitante
+    pc.ontrack = (event) => {
+      if (event.streams && event.streams[0]) {
+        const video = document.getElementById('video-visitante');
+        video.srcObject = event.streams[0];
+        video.muted = false;
+        video.play().catch(() => {});
+        document.getElementById('llamada-estado').textContent = '';
+      }
+    };
+
+    // ICE candidates del residente → Firebase
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        callRef.child('residentCandidates').push(event.candidate.toJSON());
+      }
+    };
+
+    // Leer la oferta del visitante
+    const snapOffer = await callRef.once('value');
+    const callData = snapOffer.val();
+    if (!callData || !callData.offer) throw new Error('Sin oferta disponible');
+
+    await pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
+
+    // Leer ICE candidates del visitante ya guardados
+    const snapCandidatos = await callRef.child('visitorCandidates').once('value');
+    if (snapCandidatos.val()) {
+      const cands = snapCandidatos.val();
+      for (const key in cands) {
+        await pc.addIceCandidate(new RTCIceCandidate(cands[key]));
+      }
+    }
+
+    // Escuchar ICE candidates del visitante que lleguen después
+    callRef.child('visitorCandidates').on('child_added', async (snap) => {
+      if (snap.val() && pc) {
+        try { await pc.addIceCandidate(new RTCIceCandidate(snap.val())); } catch(e) {}
+      }
+    });
+
+    // Crear respuesta
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    await callRef.update({
+      answer: { type: answer.type, sdp: answer.sdp },
+      status: 'active'
+    });
+
+    // Escuchar si el visitante colgó
+    callRef.child('status').on('value', (snap) => {
+      if (snap.val() === 'ended') colgarLlamada(false);
+    });
+
+  } catch(err) {
+    console.error(err);
+    toast('Error al conectar: ' + err.message);
+    colgarLlamada(false);
+  }
+}
+
+// RECHAZAR
+async function rechazarLlamada() {
+  detenerRing();
+  if (callRef) {
+    await callRef.update({ status: 'rejected' }).catch(() => {});
+    callRef.off();
+    callRef = null;
+  }
+  volverStandby();
+}
+
+// COLGAR
+async function colgarLlamada(notificar = true) {
+  detenerRing();
+  if (pc) { pc.close(); pc = null; }
+
+  if (callRef && notificar) {
+    await callRef.update({ status: 'ended' }).catch(() => {});
+    callRef.off();
+    callRef = null;
+  }
+
+  const video = document.getElementById('video-visitante');
+  video.srcObject = null;
+  document.getElementById('audio-remoto').srcObject = null;
+
+  llamadaActualId = null;
+  volverStandby();
+}
+
+function volverStandby() {
+  document.getElementById('pantalla-llamada').style.display = 'none';
+  document.getElementById('pantalla-standby').style.display = 'flex';
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), 3000);
+}
+
+// Iniciar al cargar
+try { init(); } catch(e) { console.error('Error init:', e); }
+</script>
+</body>
+</html>
