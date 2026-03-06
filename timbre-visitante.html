@@ -179,7 +179,7 @@
 
 <!-- Firebase — múltiples CDN como fallback -->
 <script>
-(function() {
+window.addEventListener('load', function() {
   function tryLoad(urls, idx, onSuccess, onFail) {
     if (idx >= urls.length) { onFail(); return; }
     var s = document.createElement('script');
@@ -199,15 +199,9 @@
     'https://unpkg.com/firebase@9.22.2/compat/database/dist/index.js'
   ];
   tryLoad(appUrls, 0, function() {
-    tryLoad(dbUrls, 0, function() {
-      sdkListo();
-    }, function() {
-      sdkError();
-    });
-  }, function() {
-    sdkError();
-  });
-})();
+    tryLoad(dbUrls, 0, sdkListo, sdkError);
+  }, sdkError);
+});
 </script>
 
 <script>
