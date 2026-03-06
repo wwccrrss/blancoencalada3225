@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -178,10 +177,38 @@
 
 <div id="toast"></div>
 
-<!-- Firebase 9 compat -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"
-  onload="sdkListo()" onerror="sdkError()"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<!-- Firebase — múltiples CDN como fallback -->
+<script>
+(function() {
+  function tryLoad(urls, idx, onSuccess, onFail) {
+    if (idx >= urls.length) { onFail(); return; }
+    var s = document.createElement('script');
+    s.src = urls[idx];
+    s.onload = onSuccess;
+    s.onerror = function() { tryLoad(urls, idx+1, onSuccess, onFail); };
+    document.head.appendChild(s);
+  }
+  var appUrls = [
+    'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
+    'https://cdn.jsdelivr.net/npm/firebase@9.22.2/compat/app/dist/index.js',
+    'https://unpkg.com/firebase@9.22.2/compat/app/dist/index.js'
+  ];
+  var dbUrls = [
+    'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js',
+    'https://cdn.jsdelivr.net/npm/firebase@9.22.2/compat/database/dist/index.js',
+    'https://unpkg.com/firebase@9.22.2/compat/database/dist/index.js'
+  ];
+  tryLoad(appUrls, 0, function() {
+    tryLoad(dbUrls, 0, function() {
+      sdkListo();
+    }, function() {
+      sdkError();
+    });
+  }, function() {
+    sdkError();
+  });
+})();
+</script>
 
 <script>
 /* =========================================================
