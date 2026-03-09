@@ -513,6 +513,8 @@ function ring() {
 }
 function iniciarRing() {
   detenerRing(); // limpiar cualquier ring anterior
+  // Recrear audioCtx si fue cerrado
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   ring();
   ringInterval = setInterval(ring, 1600);
 }
