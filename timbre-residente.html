@@ -334,6 +334,490 @@ function activarDepto(n) {
   document.getElementById('standby-num').textContent = n;
   document.getElementById('pantalla-standby').style.display = 'flex';
   ocultarDiag();
+
+  // Pedir permiso de micrófono AHORA mientras el usuario interactúa con la página
+  // Así cuando llegue la llamada Chrome ya tiene el permiso concedido
+  navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+    .then(function(stream) {
+      stream.getTracks().forEach(function(t) { t.stop(); });
+    })
+    .catch(function(err) {
+      document.getElementById('standby-status').innerHTML = '<span style="color:#e74c3c;font-size:12px">⚠️ Habilitá el micrófono para poder hablar</span>';
+    });
+
+  escuchar();
+}
+
+function cambiarDepto() {
+  if (escRef) { escRef.off(); escRef = null; }
+  localStorage.removeItem('portero_depto');
+  miDepto = undefined;
+  document.getElementById('pantalla-standby').style.display = 'none';
+  document.getElementById('diag-box').style.display = 'block';
+  document.getElementById('diag-box').style.opacity = '1';
+  d('d4','wai','Ingresá tu número de depto');
+  ocultarDiag();
+  document.getElementById('pantalla-config').style.display = 'flex';
+}
+
+/* — escuchar llamadas — */
+function escuchar() {
+  if (escRef) escRef.off();
+  escRef = db.ref('calls').orderByChild('deptoId').equalTo(miDepto);
+
+  escRef.on('child_added', function(snap) {
+    procesarLlamada(snap);
+  });
+  escRef.on('child_changed', function(snap) {
+    procesarLlamada(snap);
+  });
+}
+
+function procesarLlamada(snap) {
+  const call = snap.val();
+  if (!call || call.status !== 'ringing') return;
+  const edad = Date.now() - (call.timestamp || 0);
+  if (edad > 30000) return; // ignorar llamadas viejas
+
+  callRef = db.ref('calls/' + snap.key);
+  mostrarLlamadaEntrante();
+}
+
+/* — LLAMADA ENTRANTE — */
+function mostrarLlamadaEntrante() {
+  document.getElementById('pantalla-standby').style.display = 'none';
+  document.getElementById('pantalla-llamada').style.display = 'flex';
+  document.getElementById('btns-entrante').style.display = 'flex';
+  document.getElementById('btn-colgar').style.display = 'none';
+  document.getElementById('ring-flash').style.display = 'block';
+  document.getElementById('llamada-estado').textContent = 'Tocando el timbre...';
+
+  iniciarRing();
+
+  // Escuchar si el visitante colgó antes de atender
+  callRef.child('status').on('value', function(snap) {
+    if (snap.val() === 'ended') {
+      detenerRing();
+      volverStandby();
+      toast('El visitante cortó');
+    }
+  });
+
+  // Auto-rechazar a los 40s
+  setTimeout(function() {
+    if (document.getElementById('btns-entrante').style.display !== 'none') {
+      rechazar();
+    }
+  }, 40000);
+}
+
+/* — ATENDER — */
+async function atender() {
+  detenerRing();
+  document.getElementById('btns-entrante').style.display = 'none';
+  document.getElementById('btn-colgar').style.display = 'flex';
+  document.getElementById('ring-flash').style.display = 'none';
+  document.getElementById('llamada-estado').textContent = 'Conectando...';
+
+  try {
+    // Solo micrófono para el residente; video viene del visitante
+    const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+
+    pc = new RTCPeerConnection(ICE);
+
+    micStream.getTracks().forEach(function(t) { pc.addTrack(t, micStream); });
+
+    pc.ontrack = function(e) {
+      if (e.streams && e.streams[0]) {
+        const video = document.getElementById('video-visitante');
+        video.srcObject = e.streams[0];
+        video.muted = false;
+        video.play().catch(function(){});
+        document.getElementById('llamada-estado').textContent = '';
+      }
+    };
+
+    pc.onicecandidate = function(e) {
+      if (e.candidate) callRef.child('residentCandidates').push(e.candidate.toJSON());
+    };
+
+    // Leer oferta del visitante
+    const snap = await callRef.once('value');
+    const data = snap.val();
+    if (!data || !data.offer) throw new Error('Sin oferta del visitante');
+
+    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+
+    // ICE candidates del visitante ya guardados
+    if (data.visitorCandidates) {
+      for (const k in data.visitorCandidates) {
+        try { await pc.addIceCandidate(new RTCIceCandidate(data.visitorCandidates[k])); } catch(e) {}
+      }
+    }
+
+    // ICE candidates nuevos del visitante
+    callRef.child('visitorCandidates').on('child_added', async function(s) {
+      if (s.val() && pc) try { await pc.addIceCandidate(new RTCIceCandidate(s.val())); } catch(e) {}
+    });
+
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    await callRef.update({ answer: { type: answer.type, sdp: answer.sdp }, status: 'active' });
+
+  } catch(err) {
+    document.getElementById('llamada-estado').textContent = 'Error: ' + err.message;
+    setTimeout(function() { colgar(); }, 3000);
+  }
+}
+
+/* — RECHAZAR / COLGAR — */
+async function rechazar() {
+  detenerRing();
+  if (callRef) { await callRef.update({ status: 'rejected' }).catch(function(){}); callRef.off(); callRef = null; }
+  volverStandby();
+}
+
+async function colgar() {
+  detenerRing();
+  if (pc) { pc.close(); pc = null; }
+  if (callRef) { await callRef.update({ status: 'ended' }).catch(function(){}); callRef.off(); callRef = null; }
+  document.getElementById('video-visitante').srcObject = null;
+  volverStandby();
+}
+
+function volverStandby() {
+  document.getElementById('pantalla-llamada').style.display = 'none';
+  document.getElementById('pantalla-standby').style.display = 'flex';
+  escuchar(); // reactivar listener
+}
+
+/* — RING con Web Audio (sin archivos externos) — */
+function ring() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    [[880, 0], [1100, 0.15]].forEach(function(par) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.frequency.value = par[0]; osc.type = 'sine';
+      const t = audioCtx.currentTime + par[1];
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.18, t + 0.05);
+      gain.gain.linearRampToValueAtTime(0, t + 0.28);
+      osc.start(t); osc.stop(t + 0.3);
+    });
+  } catch(e) {}
+}
+function iniciarRing() { ring(); ringInterval = setInterval(ring, 1600); }
+function detenerRing() { if (ringInterval) { clearInterval(ringInterval); ringInterval = null; } }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('visible');
+  setTimeout(function() { t.classList.remove('visible'); }, 3000);
+}
+</script>
+</body>
+</html>  .d-wai { color: #d29922; }
+
+  /* STANDBY */
+  #pantalla-standby {
+    display: none; flex-direction: column;
+    align-items: center; gap: 20px;
+    width: 100%; max-width: 380px; text-align: center;
+  }
+  .standby-label { font-family: 'Bebas Neue', sans-serif; font-size: 11px; letter-spacing: 4px; color: var(--suave); text-transform: uppercase; }
+  .standby-depto { font-family: 'Bebas Neue', sans-serif; font-size: 100px; color: var(--oro); line-height: 1; }
+  .standby-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--verde); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--verde); animation: blink 2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .standby-info { font-size: 13px; color: #555; line-height: 1.6; max-width: 280px; }
+  .btn-link { background: none; border: none; color: #444; font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 8px; }
+
+  /* CONFIG DEPTO (primera vez) */
+  #pantalla-config {
+    display: none; flex-direction: column;
+    align-items: center; gap: 20px;
+    width: 100%; max-width: 340px; text-align: center;
+  }
+  .config-titulo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--oro); letter-spacing: 2px; }
+  .config-desc { font-size: 13px; color: var(--suave); line-height: 1.6; }
+  .input-depto {
+    background: var(--panel); border: 1px solid #333; border-radius: 12px;
+    color: var(--texto); font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px; width: 120px; height: 80px; text-align: center; outline: none;
+    -webkit-appearance: none;
+  }
+  .input-depto:focus { border-color: var(--oro); }
+  .btn-activar {
+    background: var(--oro); color: #111; border: none; border-radius: 30px;
+    padding: 14px 32px; font-size: 15px; font-weight: 500;
+    cursor: pointer; width: 100%; max-width: 280px; transition: all .2s;
+  }
+  .btn-activar:active { transform: scale(.97); }
+
+  /* LLAMADA PANTALLA COMPLETA */
+  #pantalla-llamada {
+    display: none; flex-direction: column; align-items: center;
+    width: 100%; height: 100vh;
+    position: fixed; inset: 0; background: #000; z-index: 50;
+  }
+  #video-visitante {
+    width: 100%; height: 100%; object-fit: cover;
+    position: absolute; inset: 0; background: #111;
+  }
+  .overlay-top {
+    position: absolute; top: 0; left: 0; right: 0; height: 130px;
+    background: linear-gradient(to bottom, rgba(0,0,0,.85), transparent);
+    z-index: 10; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding-top: 24px; gap: 6px;
+  }
+  .ot-label { font-size: 11px; letter-spacing: 3px; color: rgba(255,255,255,.5); text-transform: uppercase; }
+  .ot-depto { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #fff; letter-spacing: 1px; }
+
+  .overlay-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 180px;
+    background: linear-gradient(to top, rgba(0,0,0,.9), transparent);
+    z-index: 10; display: flex; align-items: flex-end;
+    justify-content: center; padding-bottom: 44px; gap: 44px;
+  }
+
+  .btn-acc {
+    width: 68px; height: 68px; border-radius: 50%; border: none;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 28px; transition: transform .15s;
+    box-shadow: 0 4px 24px rgba(0,0,0,.5);
+  }
+  .btn-acc:active { transform: scale(.88); }
+  .btn-verde { background: var(--verde); box-shadow: 0 4px 24px rgba(39,174,96,.4); }
+  .btn-rojo  { background: var(--rojo);  box-shadow: 0 4px 24px rgba(192,57,43,.4); }
+
+  .ring-flash {
+    position: absolute; inset: 0; z-index: 5; pointer-events: none;
+    animation: flash 1s ease-in-out infinite;
+  }
+  @keyframes flash {
+    0%,100% { box-shadow: inset 0 0 0 0 rgba(201,168,76,0); }
+    50%      { box-shadow: inset 0 0 80px 20px rgba(201,168,76,.15); }
+  }
+
+  .llamada-estado {
+    position: absolute; bottom: 128px; left: 0; right: 0;
+    text-align: center; font-size: 13px; color: rgba(255,255,255,.6);
+    letter-spacing: 1px; z-index: 10;
+  }
+
+  #toast {
+    position: fixed; bottom: 30px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #333; color: var(--texto);
+    padding: 10px 20px; border-radius: 20px;
+    font-size: 13px; opacity: 0; transition: all .3s;
+    pointer-events: none; z-index: 200;
+  }
+  #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- DIAGNÓSTICO -->
+<div id="diag-box">
+  <div class="dl d-wai" id="d1">⏳ Cargando Firebase SDK...</div>
+  <div class="dl d-wai" id="d2">⏳ Inicializando app...</div>
+  <div class="dl d-wai" id="d3">⏳ Conectando a la base de datos...</div>
+  <div class="dl d-wai" id="d4">⏳ Detectando departamento...</div>
+</div>
+
+<!-- CONFIG (primera vez, sin ?depto en URL y sin localStorage) -->
+<div id="pantalla-config">
+  <div class="config-titulo">Configurar Depto</div>
+  <div class="config-desc">Ingresá el número de tu departamento para recibir llamadas del portero digital.</div>
+  <input type="number" class="input-depto" id="input-depto" placeholder="5" min="1" max="99">
+  <button class="btn-activar" onclick="configurarDepto()">Activar Portero</button>
+</div>
+
+<!-- STANDBY -->
+<div id="pantalla-standby">
+  <div class="standby-label">Portero Digital</div>
+  <div class="standby-depto" id="standby-num">—</div>
+  <div class="standby-label" style="margin-top:-12px">Departamento</div>
+  <div class="standby-status">
+    <div class="dot"></div>
+    <span>Timbre activo</span>
+  </div>
+  <div class="standby-info">
+    Cuando alguien toque tu timbre desde la puerta del edificio, recibirás la llamada aquí con video en tiempo real.
+  </div>
+  <button class="btn-link" onclick="cambiarDepto()">Cambiar departamento</button>
+</div>
+
+<!-- LLAMADA -->
+<div id="pantalla-llamada">
+  <div class="ring-flash" id="ring-flash"></div>
+  <video id="video-visitante" autoplay playsinline muted></video>
+
+  <div class="overlay-top">
+    <div class="ot-label">Llamada desde la puerta</div>
+    <div class="ot-depto">Blanco Encalada 3225</div>
+  </div>
+
+  <div class="llamada-estado" id="llamada-estado">Tocando el timbre...</div>
+
+  <div class="overlay-bottom">
+    <div id="btns-entrante" style="display:flex;gap:44px">
+      <button class="btn-acc btn-rojo"  onclick="rechazar()">📵</button>
+      <button class="btn-acc btn-verde" onclick="atender()">📞</button>
+    </div>
+    <button class="btn-acc btn-rojo" id="btn-colgar" style="display:none" onclick="colgar()">📵</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Firebase — múltiples CDN como fallback -->
+<script>
+// El loader se ejecuta cuando el DOM está listo, así las funciones ya están definidas
+window.addEventListener('load', function() {
+  function tryLoad(urls, idx, onSuccess, onFail) {
+    if (idx >= urls.length) { onFail(); return; }
+    var s = document.createElement('script');
+    s.src = urls[idx];
+    s.onload = onSuccess;
+    s.onerror = function() { tryLoad(urls, idx+1, onSuccess, onFail); };
+    document.head.appendChild(s);
+  }
+  var appUrls = [
+    'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
+    'https://cdn.jsdelivr.net/npm/firebase@9.22.2/compat/app/dist/index.js',
+    'https://unpkg.com/firebase@9.22.2/compat/app/dist/index.js'
+  ];
+  var dbUrls = [
+    'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js',
+    'https://cdn.jsdelivr.net/npm/firebase@9.22.2/compat/database/dist/index.js',
+    'https://unpkg.com/firebase@9.22.2/compat/database/dist/index.js'
+  ];
+  tryLoad(appUrls, 0, function() {
+    tryLoad(dbUrls, 0, sdkListo, sdkError);
+  }, sdkError);
+});
+</script>
+
+<script>
+/* =========================================================
+   CONFIGURACIÓN — ya completada con tus datos reales
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyBkd10JiZTM2kdj6tJgssINZTzGhZq2D0Q",
+  authDomain: "blancoencalada3225.firebaseapp.com",
+  databaseURL: "https://blancoencalada3225-default-rtdb.firebaseio.com",
+  projectId: "blancoencalada3225",
+  storageBucket: "blancoencalada3225.firebasestorage.app",
+  messagingSenderId: "777847551727",
+  appId: "1:777847551727:web:4c291e51ee77b272b18d1a"
+};
+/* ========================================================= */
+
+const ICE = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' }
+]};
+
+let db, miDepto, escRef, callRef, pc;
+let ringInterval = null;
+let audioCtx = null;
+
+/* — helpers diagnóstico — */
+function d(id, tipo, txt) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'dl d-' + tipo;
+  el.textContent = (tipo==='ok'?'✅':tipo==='err'?'❌':'⏳') + ' ' + txt;
+}
+function ocultarDiag() {
+  const b = document.getElementById('diag-box');
+  if (!b) return;
+  b.style.transition = 'opacity .5s'; b.style.opacity = '0';
+  setTimeout(function(){ if(b) b.style.display='none'; }, 600);
+}
+
+function sdkError() { d('d1','err','No se pudo cargar Firebase SDK (sin internet?)'); }
+
+function sdkListo() {
+  d('d1','ok','Firebase SDK cargado');
+
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('AIzaSyBExample')) {
+    d('d2','err','Falta pegar el apiKey real de Firebase');
+    return;
+  }
+
+  try {
+    firebase.initializeApp(firebaseConfig);
+    d('d2','ok','App inicializada · ' + firebaseConfig.projectId);
+  } catch(e) {
+    d('d2','err','initializeApp error: ' + e.message);
+    return;
+  }
+
+  try {
+    db = firebase.database();
+  } catch(e) {
+    d('d3','err','database() error: ' + e.message);
+    return;
+  }
+
+  db.ref('.info/connected').on('value', function(snap) {
+    if (snap.val() === true) {
+      d('d3','ok','Base de datos conectada ✓');
+      detectarDepto();
+    } else {
+      d('d3','wai','Esperando conexión...');
+    }
+  });
+
+  setTimeout(function() {
+    if (miDepto === undefined) {
+      d('d3','ok','Base de datos lista');
+      detectarDepto();
+    }
+  }, 8000);
+}
+
+/* — detectar depto — */
+function detectarDepto() {
+  const params = new URLSearchParams(window.location.search);
+  const paramDepto = params.get('depto');
+
+  if (paramDepto && !isNaN(paramDepto) && parseInt(paramDepto) > 0) {
+    d('d4','ok','Depto detectado por URL: ' + paramDepto);
+    activarDepto(parseInt(paramDepto));
+    return;
+  }
+
+  const guardado = localStorage.getItem('portero_depto');
+  if (guardado && !isNaN(guardado)) {
+    d('d4','ok','Depto detectado por memoria: ' + guardado);
+    activarDepto(parseInt(guardado));
+    return;
+  }
+
+  d('d4','wai','Ingresá tu número de depto');
+  ocultarDiag();
+  document.getElementById('pantalla-config').style.display = 'flex';
+}
+
+function configurarDepto() {
+  const val = parseInt(document.getElementById('input-depto').value);
+  if (!val || val < 1 || val > 99) { toast('Ingresá un número válido (1-99)'); return; }
+  activarDepto(val);
+}
+
+function activarDepto(n) {
+  miDepto = n;
+  localStorage.setItem('portero_depto', n);
+  document.getElementById('pantalla-config').style.display = 'none';
+  document.getElementById('standby-num').textContent = n;
+  document.getElementById('pantalla-standby').style.display = 'flex';
+  ocultarDiag();
   escuchar();
 }
 
