@@ -413,11 +413,13 @@ function mostrarLlamadaEntrante() {
 
 /* — ATENDER — */
 async function atender() {
-  detenerRing();
+  detenerRing(); // detener ring inmediatamente al tocar atender
   document.getElementById('btns-entrante').style.display = 'none';
   document.getElementById('btn-colgar').style.display = 'flex';
   document.getElementById('ring-flash').style.display = 'none';
   document.getElementById('llamada-estado').textContent = 'Conectando...';
+  // Cancelar cualquier tono pendiente cerrando y recreando el contexto de audio
+  if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
 
   try {
     // Solo micrófono para el residente; video viene del visitante
@@ -429,6 +431,7 @@ async function atender() {
 
     pc.ontrack = function(e) {
       if (e.streams && e.streams[0]) {
+        detenerRing(); // asegurarse que el ring paró al conectar
         const video = document.getElementById('video-visitante');
         video.srcObject = e.streams[0];
         video.muted = false;
@@ -508,8 +511,20 @@ function ring() {
     });
   } catch(e) {}
 }
-function iniciarRing() { ring(); ringInterval = setInterval(ring, 1600); }
-function detenerRing() { if (ringInterval) { clearInterval(ringInterval); ringInterval = null; } }
+function iniciarRing() {
+  detenerRing(); // limpiar cualquier ring anterior
+  ring();
+  ringInterval = setInterval(ring, 1600);
+}
+
+function detenerRing() {
+  if (ringInterval) { clearInterval(ringInterval); ringInterval = null; }
+  // Cerrar el contexto de audio para cortar cualquier tono en curso
+  if (audioCtx) {
+    try { audioCtx.close(); } catch(e) {}
+    audioCtx = null;
+  }
+}
 
 function toast(msg) {
   const t = document.getElementById('toast');
