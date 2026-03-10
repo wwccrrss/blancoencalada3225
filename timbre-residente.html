@@ -349,6 +349,15 @@ function activarDepto(n) {
       document.getElementById('standby-status').innerHTML = '<span style="color:#e74c3c;font-size:12px">⚠️ Habilitá el micrófono para poder hablar</span>';
     });
 
+  // Guardar depto en Firebase para que el SW lo pueda leer
+  if (typeof db !== 'undefined') {
+    db.ref('residentes/depto' + n + '/token').set({
+      depto: n,
+      ts: Date.now(),
+      ua: navigator.userAgent.substring(0, 50)
+    });
+  }
+
   // Registrar Service Worker y pedir permiso de notificaciones
   registrarSW(n);
 
