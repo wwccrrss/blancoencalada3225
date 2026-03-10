@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="/blancoencalada3225/manifest.json">
+<meta name="theme-color" content="#C9A84C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>Portero — Depto</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
@@ -336,7 +341,6 @@ function activarDepto(n) {
   ocultarDiag();
 
   // Pedir permiso de micrófono AHORA mientras el usuario interactúa con la página
-  // Así cuando llegue la llamada Chrome ya tiene el permiso concedido
   navigator.mediaDevices.getUserMedia({ audio: true, video: false })
     .then(function(stream) {
       stream.getTracks().forEach(function(t) { t.stop(); });
@@ -345,7 +349,59 @@ function activarDepto(n) {
       document.getElementById('standby-status').innerHTML = '<span style="color:#e74c3c;font-size:12px">⚠️ Habilitá el micrófono para poder hablar</span>';
     });
 
+  // Registrar Service Worker y pedir permiso de notificaciones
+  registrarSW(n);
+
   escuchar();
+}
+
+function registrarSW(depto) {
+  if (!('serviceWorker' in navigator)) {
+    console.log('SW no soportado');
+    return;
+  }
+  
+  Notification.requestPermission().then(function(permiso) {
+    if (permiso !== 'granted') {
+      console.log('Notificaciones no permitidas');
+      return;
+    }
+    
+    navigator.serviceWorker.register('/blancoencalada3225/sw.js', { scope: '/blancoencalada3225/' })
+      .then(function(reg) {
+        console.log('SW registrado, estado:', reg.active ? 'activo' : 'instalando');
+        
+        function enviarDepto(worker) {
+          worker.postMessage({ type: 'WATCH_DEPTO', depto: depto });
+          console.log('Mensaje enviado al SW para depto', depto);
+        }
+        
+        // Si ya está activo
+        if (reg.active) {
+          enviarDepto(reg.active);
+        }
+        
+        // Cuando se active
+        if (reg.installing) {
+          reg.installing.addEventListener('statechange', function() {
+            if (this.state === 'activated') enviarDepto(this);
+          });
+        }
+        
+        // También via ready
+        navigator.serviceWorker.ready.then(function(readyReg) {
+          if (readyReg.active) enviarDepto(readyReg.active);
+        });
+        
+        // Escuchar mensajes del SW
+        navigator.serviceWorker.addEventListener('message', function(event) {
+          console.log('Mensaje del SW:', event.data);
+        });
+      })
+      .catch(function(err) {
+        console.log('SW error:', err);
+      });
+  });
 }
 
 function cambiarDepto() {
