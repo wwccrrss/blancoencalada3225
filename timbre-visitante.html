@@ -322,6 +322,7 @@ async function llamar(n) {
   setEstado('Conectando...');
 
   // ntfy — enviar ANTES de cualquier async/await
+  console.log('ntfy: enviando al depto', n);
   fetch('https://ntfy.sh/portero-be3225-depto' + n, {
     method: 'POST',
     headers: {
@@ -331,7 +332,7 @@ async function llamar(n) {
       'Click': 'https://wwccrrss.github.io/blancoencalada3225/timbre-residente.html?depto=' + n
     },
     body: 'Alguien toco el timbre en Blanco Encalada 3225'
-  }).catch(function(){});
+  }).then(r => console.log('ntfy status:', r.status)).catch(e => console.log('ntfy error:', e));
 
   try {
     // 1. PRIMERO registrar la llamada en Firebase (antes de pedir cámara)
