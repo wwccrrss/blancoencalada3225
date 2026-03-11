@@ -321,6 +321,18 @@ async function llamar(n) {
   document.getElementById('depto-num').textContent = n;
   setEstado('Conectando...');
 
+  // ntfy — enviar ANTES de cualquier async/await
+  fetch('https://ntfy.sh/portero-be3225-depto' + n, {
+    method: 'POST',
+    headers: {
+      'Title': 'Llamada Depto ' + n,
+      'Priority': 'urgent',
+      'Tags': 'bell',
+      'Click': 'https://wwccrrss.github.io/blancoencalada3225/timbre-residente.html?depto=' + n
+    },
+    body: 'Alguien toco el timbre en Blanco Encalada 3225'
+  }).catch(function(){});
+
   try {
     // 1. PRIMERO registrar la llamada en Firebase (antes de pedir cámara)
     const id = 'call_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -330,23 +342,6 @@ async function llamar(n) {
       timestamp: firebase.database.ServerValue.TIMESTAMP
     });
     setEstado('Llamando... activando cámara');
-
-    // Notificar al residente via ntfy.sh
-    console.log('Enviando notificacion ntfy al depto', n);
-    fetch('https://ntfy.sh/portero-be3225-depto' + n, {
-      method: 'POST',
-      headers: {
-        'Title': 'Llamada Depto ' + n,
-        'Priority': 'urgent',
-        'Tags': 'bell',
-        'Click': 'https://wwccrrss.github.io/blancoencalada3225/timbre-residente.html?depto=' + n
-      },
-      body: 'Alguien toco el timbre en Blanco Encalada 3225'
-    }).then(function(r) {
-      console.log('ntfy status:', r.status);
-    }).catch(function(e) {
-      console.log('ntfy error:', e);
-    });
 
     // 2. DESPUÉS pedir cámara y micrófono (puede fallar sin romper la llamada)
     try {
