@@ -307,10 +307,16 @@ function sdkListo() {
 function detectarDepto() {
   const params = new URLSearchParams(window.location.search);
   const paramDepto = params.get('depto');
+  const paramCallId = params.get('callId');
 
   if (paramDepto && !isNaN(paramDepto) && parseInt(paramDepto) > 0) {
     d('d4','ok','Depto detectado por URL: ' + paramDepto);
     activarDepto(parseInt(paramDepto));
+    // Si viene con callId (desde notificación), mostrar pantalla de llamada inmediatamente
+    if (paramCallId) {
+      callRef = db.ref('calls/' + paramCallId);
+      setTimeout(function() { mostrarLlamadaEntrante(); }, 500);
+    }
     return;
   }
 

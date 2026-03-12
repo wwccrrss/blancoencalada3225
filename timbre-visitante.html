@@ -321,6 +321,9 @@ async function llamar(n) {
   document.getElementById('depto-num').textContent = n;
   setEstado('Conectando...');
 
+  // Generar callId ANTES del try para incluirlo en ntfy
+  const callId = 'call_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+
   // ntfy — enviar ANTES de cualquier async/await
   console.log('ntfy: enviando al depto', n);
   fetch('https://ntfy.sh/portero-be3225-depto' + n, {
@@ -329,14 +332,14 @@ async function llamar(n) {
       'Title': 'Llamada Depto ' + n,
       'Priority': 'urgent',
       'Tags': 'bell',
-      'Click': 'https://wwccrrss.github.io/blancoencalada3225/timbre-residente.html?depto=' + n
+      'Click': 'https://wwccrrss.github.io/blancoencalada3225/timbre-residente.html?depto=' + n + '&callId=' + callId
     },
     body: 'Alguien toco el timbre en Blanco Encalada 3225'
   }).then(r => console.log('ntfy status:', r.status)).catch(e => console.log('ntfy error:', e));
 
   try {
     // 1. PRIMERO registrar la llamada en Firebase (antes de pedir cámara)
-    const id = 'call_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    const id = callId;
     callRef = db.ref('calls/' + id);
     await callRef.set({
       deptoId: n, status: 'ringing',
