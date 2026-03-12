@@ -410,7 +410,7 @@ async function llamar(n) {
       if (document.getElementById('estado').textContent !== '✓ Conectado') {
         colgar(true); toast('Sin respuesta');
       }
-    }, 40000);
+    }, 90000);
 
   } catch(err) {
     setEstado('Error: ' + err.message, 'error');
