@@ -315,6 +315,7 @@ const ICE = { iceServers: [
 ]};
 
 let db, miDepto, escRef, callRef, pc, pendingCallId = null, micStream = null;
+const abrioDesdeNotificacion = new URLSearchParams(window.location.search).has('callId');
 let ringInterval = null;
 let audioCtx = null;
 
@@ -677,6 +678,12 @@ async function colgar() {
 }
 
 function volverStandby() {
+  // Si vino desde notificación, no mostrar standby nunca
+  if (abrioDesdeNotificacion) {
+    document.getElementById('pantalla-llamada').style.display = 'none';
+    document.getElementById('pantalla-fin').style.display = 'flex';
+    return;
+  }
   document.getElementById('pantalla-llamada').style.display = 'none';
   document.getElementById('pantalla-standby').style.display = 'flex';
   escuchar(); // reactivar listener
