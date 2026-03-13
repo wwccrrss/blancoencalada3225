@@ -685,10 +685,8 @@ function cerrarApp() {
   if (callRef) { callRef.off(); callRef = null; }
   if (pc) { pc.close(); pc = null; }
   if (micStream) { micStream.getTracks().forEach(function(t) { t.stop(); }); micStream = null; }
-  // Intentar cerrar, si no reemplazar la página con una en blanco
-  if (!window.close()) {
-    document.body.innerHTML = '<div style="background:#111;height:100vh;display:flex;align-items:center;justify-content:center;"><span style="color:#555;font-size:14px;">Podés cerrar esta pestaña</span></div>';
-  }
+  // Redirigir a página de cierre limpia
+  window.location.href = 'https://wwccrrss.github.io/blancoencalada3225/fin.html';
 }
 
 function volverStandby() {
