@@ -209,7 +209,7 @@
 <div id="pantalla-llamada">
   <div class="ring-flash" id="ring-flash"></div>
   <video id="video-visitante" autoplay playsinline muted></video>
-  <img id="preview-visitante" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0.85;" />
+  <img id="preview-visitante" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:6;opacity:1;" />
   <audio id="audio-visitante" autoplay playsinline></audio>
   <audio id="audio-visitante" autoplay playsinline></audio>
 
@@ -551,6 +551,17 @@ function mostrarLlamadaEntrante() {
   }
 
   iniciarRing();
+
+  // Mostrar foto preview del visitante de fondo
+  callRef.child('preview').on('value', function(snap) {
+    if (snap.val()) {
+      var img = document.getElementById('preview-visitante');
+      img.src = snap.val();
+      img.style.display = 'block';
+      document.getElementById('pantalla-llamada').style.background = 'transparent';
+    }
+  });
+
   // Escuchar si el visitante colgó antes de atender
   callRef.child('status').on('value', function(snap) {
     if (snap.val() === 'ended' || snap.val() === 'rejected') {
@@ -588,6 +599,7 @@ async function atender() {
   const incomingScreen = document.getElementById('incoming-screen');
   if (incomingScreen) incomingScreen.style.display = 'none';
   document.getElementById('preview-visitante').style.display = 'none';
+  document.getElementById('pantalla-llamada').style.background = '';
   if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
 
   try {
@@ -660,6 +672,7 @@ async function colgar() {
   document.getElementById('video-visitante').srcObject = null;
   document.getElementById('audio-visitante').srcObject = null;
   document.getElementById('preview-visitante').style.display = 'none';
+  document.getElementById('pantalla-llamada').style.background = '';
   document.getElementById('pantalla-llamada').style.display = 'none';
   if (abrioDesdeNotificacion) {
     cerrarApp();
