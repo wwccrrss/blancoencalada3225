@@ -22,15 +22,17 @@
     overflow: hidden;
   }
 
-  /* Video propio de fondo */
+  /* Video propio pequeño esquina */
   #video-yo {
     position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    top: 20px;
+    right: 16px;
+    width: 90px;
+    height: 120px;
     object-fit: cover;
-    z-index: 0;
-    opacity: 0.5;
+    z-index: 5;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.2);
     transform: scaleX(-1);
   }
 
@@ -44,7 +46,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 60px 24px 72px;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.4) 100%);
+    background: var(--fondo);
   }
 
   .llamando-sub {
@@ -55,9 +57,11 @@
   }
   .llamando-depto {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 72px;
+    font-size: 80px;
     color: var(--oro);
     line-height: 1;
+    position: relative;
+    z-index: 2;
   }
   .llamando-label {
     font-size: 13px;
@@ -69,8 +73,8 @@
   /* Pulso animado */
   .pulso-ring {
     position: relative;
-    width: 100px;
-    height: 100px;
+    width: 160px;
+    height: 160px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -84,10 +88,9 @@
   }
   .pulso-ring::after { animation-delay: 0.6s; }
   @keyframes pulso {
-    0% { width: 60px; height: 60px; opacity: 0.8; }
-    100% { width: 120px; height: 120px; opacity: 0; }
+    0% { width: 120px; height: 120px; opacity: 0.8; }
+    100% { width: 200px; height: 200px; opacity: 0; }
   }
-  .icono-c { font-size: 36px; position: relative; z-index: 2; }
 
   .estado {
     font-size: 14px;
@@ -95,7 +98,6 @@
     text-align: center;
     min-height: 20px;
   }
-  .estado.conectado { color: #2ecc71; }
   .estado.error { color: #e74c3c; }
 
   .btn-colgar {
@@ -144,18 +146,25 @@
 <audio id="audio-remoto" autoplay playsinline></audio>
 
 <div class="overlay">
-  <div style="text-align:center;">
-    <div class="llamando-sub">Llamando al depto</div>
-    <div class="llamando-depto" id="depto-num">—</div>
+  <!-- Centro: número de depto con anillos de pulso -->
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;">
+    <div class="llamando-sub" id="llamando-sub">Llamando al depto</div>
+    <div class="pulso-ring">
+      <div class="llamando-depto" id="depto-num">—</div>
+    </div>
     <div class="llamando-label">Blanco Encalada 3225</div>
   </div>
 
-  <div class="pulso-ring"><span class="icono-c">📞</span></div>
-
-  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+  <!-- Abajo: estado y botón colgar -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding-bottom:0;">
     <div class="estado" id="estado">Activando cámara...</div>
     <button class="btn-colgar" onclick="colgar()">📵</button>
   </div>
+</div>
+
+<!-- Cámara propia pequeña, esquina superior derecha -->
+<div id="mini-cam" style="position:fixed;top:20px;right:16px;width:90px;height:120px;border-radius:12px;overflow:hidden;z-index:5;border:2px solid rgba(255,255,255,0.2);">
+  <!-- video-yo se mueve aquí por CSS -->
 </div>
 
 <div id="pantalla-gracias">
@@ -269,9 +278,9 @@ async function iniciarLlamada(n) {
       if (snap.val() && pc && !pc.currentRemoteDescription) {
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
-          setEstado('✓ Conectado', 'conectado');
+          setEstado('');
           llamadaConectada = true;
-          document.querySelector('.icono-c').textContent = '🎙️';
+          document.getElementById('llamando-sub').textContent = 'Conectado al depto';
         } catch(e) {}
       }
     });
