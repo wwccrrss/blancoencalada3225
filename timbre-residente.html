@@ -522,7 +522,7 @@ function procesarLlamada(snap) {
   const call = snap.val();
   if (!call || call.status !== 'ringing') return;
   const edad = Date.now() - (call.timestamp || 0);
-  if (edad > 30000) return; // ignorar llamadas viejas
+  if (edad > 90000) return; // ignorar llamadas viejas
 
   callRef = db.ref('calls/' + snap.key);
   mostrarLlamadaEntrante();
