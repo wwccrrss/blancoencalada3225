@@ -538,6 +538,14 @@ function mostrarLlamadaEntrante() {
   document.getElementById('btn-colgar').style.display = 'none';
   document.getElementById('ring-flash').style.display = 'block';
   document.getElementById('llamada-estado').textContent = '';
+  // Descartar notificación ntfy si existe
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.ready.then(function(reg) {
+      reg.getNotifications().then(function(notifs) {
+        notifs.forEach(function(n) { n.close(); });
+      });
+    });
+  }
 
   iniciarRing();
 
@@ -636,12 +644,7 @@ async function colgar() {
   if (micStream) { micStream.getTracks().forEach(function(t) { t.stop(); }); micStream = null; }
   if (callRef) { await callRef.update({ status: 'ended' }).catch(function(){}); callRef.off(); callRef = null; }
   document.getElementById('video-visitante').srcObject = null;
-  // Cerrar la página automáticamente
-  setTimeout(function() {
-    window.close();
-    // Si window.close() no funciona (página no abierta por script), volver a standby
-    volverStandby();
-  }, 1000);
+  volverStandby();
 }
 
 function volverStandby() {
