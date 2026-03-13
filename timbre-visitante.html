@@ -228,7 +228,7 @@ const ICE = { iceServers: [
   { urls: 'stun:stun1.l.google.com:19302' }
 ]};
 
-let db, pc, localStream, callRef, llamadaConectada = false;
+let db, pc, localStream, callRef, llamadaConectada = false, wakeLock = null;
 
 function d(id, tipo, txt) {
   const el = document.getElementById(id);
@@ -323,6 +323,13 @@ async function llamar(n) {
 
   // Generar callId ANTES del try para incluirlo en ntfy
   const callId = 'call_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+
+  // Mantener pantalla encendida durante la llamada
+  if ('wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').then(function(wl) {
+      wakeLock = wl;
+    }).catch(function() {});
+  }
 
   // ntfy — enviar ANTES de cualquier async/await
   console.log('ntfy: enviando al depto', n);
@@ -420,6 +427,7 @@ async function llamar(n) {
 
 async function colgar(notif) {
   llamadaConectada = false;
+  if (wakeLock) { try { wakeLock.release(); } catch(e) {} wakeLock = null; }
   if (notif !== false && callRef) { try { await callRef.update({ status: 'ended' }); } catch(e) {} }
   if (callRef) { callRef.off(); callRef = null; }
   if (pc) { pc.close(); pc = null; }
