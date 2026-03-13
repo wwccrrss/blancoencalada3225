@@ -259,10 +259,10 @@
 <div id="toast"></div>
 
 <!-- PANTALLA FIN DE LLAMADA -->
-<div id="pantalla-fin" style="display:none;position:fixed;inset:0;background:#111;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:100;text-align:center;padding:40px;">
+<div id="pantalla-fin" style="display:none;position:fixed;inset:0;background:#111;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;text-align:center;padding:40px;">
   <div style="font-size:56px;">📵</div>
   <div style="font-size:20px;font-weight:600;color:#fff;">Llamada finalizada</div>
-  <button onclick="window.close()" style="margin-top:16px;padding:14px 32px;background:#C9A84C;color:#111;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">Cerrar</button>
+  <button onclick="cerrarApp()" style="margin-top:16px;padding:14px 32px;background:#C9A84C;color:#111;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">Cerrar</button>
 </div>
 
 <!-- Firebase — múltiples CDN como fallback -->
@@ -677,6 +677,18 @@ async function colgar() {
     document.getElementById('pantalla-fin').style.display = 'none';
     volverStandby();
   }, 3000);
+}
+
+function cerrarApp() {
+  // Desconectar todo
+  if (escRef) { escRef.off(); escRef = null; }
+  if (callRef) { callRef.off(); callRef = null; }
+  if (pc) { pc.close(); pc = null; }
+  if (micStream) { micStream.getTracks().forEach(function(t) { t.stop(); }); micStream = null; }
+  // Intentar cerrar, si no reemplazar la página con una en blanco
+  if (!window.close()) {
+    document.body.innerHTML = '<div style="background:#111;height:100vh;display:flex;align-items:center;justify-content:center;"><span style="color:#555;font-size:14px;">Podés cerrar esta pestaña</span></div>';
+  }
 }
 
 function volverStandby() {
