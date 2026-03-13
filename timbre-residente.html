@@ -681,9 +681,12 @@ async function colgar() {
 
 function volverStandby() {
   document.getElementById('pantalla-llamada').style.display = 'none';
-  // Si vino desde notificación, nunca volver al standby
+  // Si vino desde notificación, nunca volver al standby — mostrar fin y no escuchar más
   if (abrioDesdeNotificacion) {
     document.getElementById('pantalla-fin').style.display = 'flex';
+    // Desconectar todos los listeners para que no haya más triggers
+    if (escRef) { escRef.off(); escRef = null; }
+    if (callRef) { callRef.off(); callRef = null; }
     return;
   }
   document.getElementById('pantalla-standby').style.display = 'flex';
