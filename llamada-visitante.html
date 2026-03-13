@@ -22,18 +22,16 @@
     overflow: hidden;
   }
 
-  /* Video propio pequeño esquina */
   #video-yo {
-    position: fixed;
-    top: 20px;
-    right: 16px;
-    width: 90px;
-    height: 120px;
+    position: relative;
+    width: 120px;
+    height: 160px;
     object-fit: cover;
     z-index: 5;
     border-radius: 12px;
-    border: 2px solid rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.15);
     transform: scaleX(-1);
+    flex-shrink: 0;
   }
 
   /* Overlay encima del video */
@@ -142,12 +140,14 @@
 </head>
 <body>
 
-<video id="video-yo" autoplay muted playsinline></video>
 <audio id="audio-remoto" autoplay playsinline></audio>
 
 <div class="overlay">
-  <!-- Centro: número de depto con anillos de pulso -->
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;">
+  <!-- Cámara propia arriba centrada -->
+  <video id="video-yo" autoplay muted playsinline></video>
+
+  <!-- Número de depto con anillos -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px;flex:1;justify-content:center;">
     <div class="llamando-sub" id="llamando-sub">Llamando al depto</div>
     <div class="pulso-ring">
       <div class="llamando-depto" id="depto-num">—</div>
@@ -156,15 +156,10 @@
   </div>
 
   <!-- Abajo: estado y botón colgar -->
-  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding-bottom:0;">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
     <div class="estado" id="estado">Activando cámara...</div>
     <button class="btn-colgar" onclick="colgar()">📵</button>
   </div>
-</div>
-
-<!-- Cámara propia pequeña, esquina superior derecha -->
-<div id="mini-cam" style="position:fixed;top:20px;right:16px;width:90px;height:120px;border-radius:12px;overflow:hidden;z-index:5;border:2px solid rgba(255,255,255,0.2);">
-  <!-- video-yo se mueve aquí por CSS -->
 </div>
 
 <div id="pantalla-gracias">
