@@ -531,36 +531,6 @@ function procesarLlamada(snap) {
 }
 
 /* — LLAMADA ENTRANTE — */
-async function recibirVideoFondo() {
-  // Conexión WebRTC solo para recibir video de fondo (sin mic aun)
-  try {
-    const pcFondo = new RTCPeerConnection(ICE);
-    pcFondo.ontrack = function(e) {
-      if (e.track.kind === 'video') {
-        const video = document.getElementById('video-visitante');
-        if (!video.srcObject) video.srcObject = new MediaStream();
-        video.srcObject.addTrack(e.track);
-        video.play().catch(function(){});
-      }
-    };
-    pcFondo.onicecandidate = function(e) {
-      if (e.candidate && callRef) callRef.child('residentCandidates').push(e.candidate.toJSON());
-    };
-    const snap = await callRef.once('value');
-    const offer = snap.val() && snap.val().offer;
-    if (!offer) return;
-    await pcFondo.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await pcFondo.createAnswer();
-    await pcFondo.setLocalDescription(answer);
-    // Guardar para que atender() lo reutilice
-    window._pcFondo = pcFondo;
-    window._answerFondo = answer;
-    callRef.child('visitorCandidates').on('child_added', function(snap) {
-      pcFondo.addIceCandidate(new RTCIceCandidate(snap.val())).catch(function(){});
-    });
-  } catch(e) { console.warn('recibirVideoFondo:', e); }
-}
-
 function mostrarLlamadaEntrante() {
   document.getElementById('pantalla-standby').style.display = 'none';
   const pl = document.getElementById('pantalla-llamada');
@@ -580,8 +550,6 @@ function mostrarLlamadaEntrante() {
   }
 
   iniciarRing();
-  recibirVideoFondo(); // mostrar video del visitante de fondo
-
   // Escuchar si el visitante colgó antes de atender
   callRef.child('status').on('value', function(snap) {
     if (snap.val() === 'ended' || snap.val() === 'rejected') {
@@ -623,43 +591,28 @@ async function atender() {
   try {
     micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
-    // Reutilizar conexión de fondo si existe, si no crear nueva
-    if (window._pcFondo) {
-      pc = window._pcFondo;
-      window._pcFondo = null;
-      // Agregar micrófono a la conexión existente
-      micStream.getTracks().forEach(function(t) { pc.addTrack(t, micStream); });
-      // El video ya está llegando, solo configurar audio
-      pc.ontrack = function(e) {
-        if (e.track.kind === 'audio') {
-          const audio = document.getElementById('audio-visitante');
-          if (!audio.srcObject) audio.srcObject = new MediaStream();
-          audio.srcObject.addTrack(e.track);
-          audio.play().catch(function(){});
-        }
-      };
-    } else {
-      pc = new RTCPeerConnection(ICE);
-      micStream.getTracks().forEach(function(t) { pc.addTrack(t, micStream); });
-      pc.ontrack = function(e) {
-        detenerRing();
-        if (e.track.kind === 'video') {
-          const video = document.getElementById('video-visitante');
-          if (!video.srcObject) video.srcObject = new MediaStream();
-          video.srcObject.addTrack(e.track);
-          video.play().catch(function(){});
-        } else if (e.track.kind === 'audio') {
-          const audio = document.getElementById('audio-visitante');
-          if (!audio.srcObject) audio.srcObject = new MediaStream();
-          audio.srcObject.addTrack(e.track);
-          audio.play().catch(function(){});
-        }
-        document.getElementById('llamada-estado').textContent = '';
-      };
-      pc.onicecandidate = function(e) {
-        if (e.candidate) callRef.child('residentCandidates').push(e.candidate.toJSON());
-      };
-    }
+    pc = new RTCPeerConnection(ICE);
+    micStream.getTracks().forEach(function(t) { pc.addTrack(t, micStream); });
+
+    pc.ontrack = function(e) {
+      detenerRing();
+      if (e.track.kind === 'video') {
+        const video = document.getElementById('video-visitante');
+        if (!video.srcObject) video.srcObject = new MediaStream();
+        video.srcObject.addTrack(e.track);
+        video.play().catch(function(){});
+      } else if (e.track.kind === 'audio') {
+        const audio = document.getElementById('audio-visitante');
+        if (!audio.srcObject) audio.srcObject = new MediaStream();
+        audio.srcObject.addTrack(e.track);
+        audio.play().catch(function(){});
+      }
+      document.getElementById('llamada-estado').textContent = '';
+    };
+
+    pc.onicecandidate = function(e) {
+      if (e.candidate) callRef.child('residentCandidates').push(e.candidate.toJSON());
+    };
 
     // Leer oferta del visitante
     const snap = await callRef.once('value');
