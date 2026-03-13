@@ -197,6 +197,8 @@ const depto = parseInt(params.get('depto'));
 if (!depto || isNaN(depto)) {
   window.location.href = 'timbre-visitante.html';
 } else {
+  // Reemplazar en el historial para que volver/reabrir no relance la llamada
+  history.replaceState(null, '', 'timbre-visitante.html');
   document.getElementById('depto-num').textContent = depto;
   iniciarLlamada(depto);
 }
@@ -305,8 +307,8 @@ async function colgar(notif) {
   if (localStream) { localStream.getTracks().forEach(function(t) { t.stop(); }); localStream = null; }
   document.getElementById('video-yo').srcObject = null;
   document.getElementById('audio-remoto').srcObject = null;
-  document.querySelector('.overlay').style.display = 'none';
-  document.getElementById('pantalla-gracias').style.display = 'flex';
+  // Redirigir a página de cierre para que no quede llamada-visitante en historial
+  window.location.href = 'https://wwccrrss.github.io/blancoencalada3225/fin-visitante.html';
 }
 
 function setEstado(txt, cls) {
