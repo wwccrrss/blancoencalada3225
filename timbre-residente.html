@@ -306,7 +306,7 @@ const ICE = { iceServers: [
   { urls: 'stun:stun1.l.google.com:19302' }
 ]};
 
-let db, miDepto, escRef, callRef, pc, pendingCallId = null;
+let db, miDepto, escRef, callRef, pc, pendingCallId = null, micStream = null;
 let ringInterval = null;
 let audioCtx = null;
 
@@ -573,7 +573,7 @@ async function atender() {
 
   try {
     // Solo micrófono para el residente; video viene del visitante
-    const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
     pc = new RTCPeerConnection(ICE);
 
@@ -633,9 +633,15 @@ async function rechazar() {
 async function colgar() {
   detenerRing();
   if (pc) { pc.close(); pc = null; }
+  if (micStream) { micStream.getTracks().forEach(function(t) { t.stop(); }); micStream = null; }
   if (callRef) { await callRef.update({ status: 'ended' }).catch(function(){}); callRef.off(); callRef = null; }
   document.getElementById('video-visitante').srcObject = null;
-  volverStandby();
+  // Cerrar la página automáticamente
+  setTimeout(function() {
+    window.close();
+    // Si window.close() no funciona (página no abierta por script), volver a standby
+    volverStandby();
+  }, 1000);
 }
 
 function volverStandby() {

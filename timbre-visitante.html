@@ -428,6 +428,8 @@ async function llamar(n) {
 async function colgar(notif) {
   llamadaConectada = false;
   if (wakeLock) { try { wakeLock.release(); } catch(e) {} wakeLock = null; }
+  // Cerrar la página automáticamente
+  setTimeout(function() { window.close(); }, 800);
   if (notif !== false && callRef) { try { await callRef.update({ status: 'ended' }); } catch(e) {} }
   if (callRef) { callRef.off(); callRef = null; }
   if (pc) { pc.close(); pc = null; }
