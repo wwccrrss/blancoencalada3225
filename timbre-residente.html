@@ -263,6 +263,7 @@
 <div id="pantalla-fin" style="display:none;position:fixed;inset:0;background:#111;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:100;text-align:center;padding:40px;">
   <div style="font-size:56px;">📵</div>
   <div style="font-size:20px;font-weight:600;color:#fff;">Llamada finalizada</div>
+  <button onclick="window.close()" style="margin-top:16px;padding:14px 32px;background:#C9A84C;color:#111;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">Cerrar</button>
 </div>
 
 <!-- Firebase — múltiples CDN como fallback -->
@@ -574,8 +575,8 @@ function mostrarLlamadaEntrante() {
       document.getElementById('pantalla-llamada').style.display = 'none';
       document.getElementById('pantalla-fin').style.display = 'flex';
       setTimeout(function() {
-        window.close();
-      }, 2000);
+        if (!window.location.search.includes('callId')) volverStandby();
+      }, 3000);
     }
   });
 
