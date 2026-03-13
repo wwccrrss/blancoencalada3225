@@ -228,7 +228,7 @@ const ICE = { iceServers: [
   { urls: 'stun:stun1.l.google.com:19302' }
 ]};
 
-let db, pc, localStream, callRef;
+let db, pc, localStream, callRef, llamadaConectada = false;
 
 function d(id, tipo, txt) {
   const el = document.getElementById(id);
@@ -389,7 +389,7 @@ async function llamar(n) {
       if (snap.val() && pc && !pc.currentRemoteDescription) {
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
-          setEstado('✓ Conectado', 'conectado');
+          setEstado('✓ Conectado', 'conectado'); llamadaConectada = true;
           document.getElementById('pulso').querySelector('.icono-c').textContent = '🎙️';
         } catch(e) {}
       }
@@ -407,7 +407,7 @@ async function llamar(n) {
     });
 
     setTimeout(function() {
-      if (document.getElementById('estado').textContent !== '✓ Conectado') {
+      if (!llamadaConectada) {
         colgar(true); toast('Sin respuesta');
       }
     }, 90000);
@@ -419,6 +419,7 @@ async function llamar(n) {
 }
 
 async function colgar(notif) {
+  llamadaConectada = false;
   if (notif !== false && callRef) { try { await callRef.update({ status: 'ended' }); } catch(e) {} }
   if (callRef) { callRef.off(); callRef = null; }
   if (pc) { pc.close(); pc = null; }
