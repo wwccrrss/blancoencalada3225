@@ -298,17 +298,15 @@ async function iniciarLlamada(n) {
   }
 }
 
-async function colgar(notif) {
+function colgar(notif) {
   llamadaConectada = false;
-  if (wakeLock) { try { wakeLock.release(); } catch(e) {} wakeLock = null; }
-  if (notif !== false && callRef) { try { await callRef.update({ status: 'ended' }); } catch(e) {} }
-  if (callRef) { callRef.off(); callRef = null; }
-  if (pc) { pc.close(); pc = null; }
-  if (localStream) { localStream.getTracks().forEach(function(t) { t.stop(); }); localStream = null; }
-  document.getElementById('video-yo').srcObject = null;
-  document.getElementById('audio-remoto').srcObject = null;
-  // Redirigir a página de cierre para que no quede llamada-visitante en historial
-  window.location.href = 'https://wwccrrss.github.io/blancoencalada3225/fin-visitante.html';
+  // Cleanup sin await para no bloquear la redirección
+  try { if (wakeLock) wakeLock.release(); } catch(e) {}
+  try { if (callRef) { callRef.update({ status: 'ended' }); callRef.off(); callRef = null; } } catch(e) {}
+  try { if (pc) { pc.close(); pc = null; } } catch(e) {}
+  try { if (localStream) { localStream.getTracks().forEach(function(t) { t.stop(); }); localStream = null; } } catch(e) {}
+  // Redirigir inmediatamente
+  window.location.replace('https://wwccrrss.github.io/blancoencalada3225/fin-visitante.html');
 }
 
 function setEstado(txt, cls) {
