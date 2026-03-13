@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link rel="manifest" href="/blancoencalada3225/manifest.json">
+<script>if (new URLSearchParams(window.location.search).has('callId')) { document.documentElement.style.setProperty('--hide-standby', 'none'); }</script>
 <meta name="theme-color" content="#C9A84C">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,6 +43,7 @@
   .d-wai { color: #d29922; }
 
   /* STANDBY */
+  :root { --hide-standby: flex; }
   #pantalla-standby {
     display: none; flex-direction: column;
     align-items: center; gap: 20px;
@@ -190,20 +192,17 @@
   <button class="btn-activar" onclick="configurarDepto()">Activar Portero</button>
 </div>
 
-<!-- STANDBY -->
-<div id="pantalla-standby">
-  <div class="standby-label">Portero Digital</div>
-  <div class="standby-depto" id="standby-num">—</div>
-  <div class="standby-label" style="margin-top:-12px">Departamento</div>
-  <div class="standby-status">
-    <div class="dot"></div>
-    <span>Timbre activo</span>
+<!-- STANDBY / LLAMADA ENTRANTE UNIFICADOS -->
+<div id="pantalla-standby" style="display:none;">
+  <!-- Estado: esperando (sin callId) -->
+  <div id="standby-espera" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:40px;text-align:center;">
+    <div style="font-size:48px;">🔔</div>
+    <div style="font-size:22px;font-weight:700;color:var(--texto);">Portero Digital</div>
+    <div style="font-size:15px;color:var(--suave);">Depto <span id="standby-num">—</span></div>
+    <div style="font-size:13px;color:var(--verde);display:flex;align-items:center;gap:6px;"><div class="dot"></div> Timbre activo</div>
+    <button onclick="window.close()" style="margin-top:24px;padding:12px 28px;background:#C9A84C;color:#111;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">Cerrar</button>
+    <button class="btn-link" onclick="cambiarDepto()" style="margin-top:4px;">Cambiar departamento</button>
   </div>
-  <div class="standby-info">
-    Cuando alguien toque tu timbre desde la puerta del edificio, recibirás la llamada aquí con video en tiempo real.
-  </div>
-  <button class="btn-link" onclick="cambiarDepto()">Cambiar departamento</button>
-  <button onclick="window.close()" style="margin-top:16px;padding:12px 28px;background:#C9A84C;color:#111;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">Cerrar</button>
 </div>
 
 <!-- LLAMADA -->
@@ -414,7 +413,10 @@ function activarDepto(n) {
   localStorage.setItem('portero_depto', n);
   document.getElementById('pantalla-config').style.display = 'none';
   document.getElementById('standby-num').textContent = n;
-  document.getElementById('pantalla-standby').style.display = 'flex';
+  // Solo mostrar standby si NO viene desde notificación
+  if (!abrioDesdeNotificacion) {
+    document.getElementById('pantalla-standby').style.display = 'flex';
+  }
   ocultarDiag();
 
   // Pedir permiso de micrófono AHORA mientras el usuario interactúa con la página
@@ -678,15 +680,14 @@ async function colgar() {
 }
 
 function volverStandby() {
-  // Si vino desde notificación, no mostrar standby nunca
+  document.getElementById('pantalla-llamada').style.display = 'none';
+  // Si vino desde notificación, nunca volver al standby
   if (abrioDesdeNotificacion) {
-    document.getElementById('pantalla-llamada').style.display = 'none';
     document.getElementById('pantalla-fin').style.display = 'flex';
     return;
   }
-  document.getElementById('pantalla-llamada').style.display = 'none';
   document.getElementById('pantalla-standby').style.display = 'flex';
-  escuchar(); // reactivar listener
+  escuchar();
 }
 
 /* — RING con Web Audio (sin archivos externos) — */
