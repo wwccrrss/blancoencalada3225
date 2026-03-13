@@ -436,8 +436,10 @@ async function colgar(notif) {
   document.getElementById('video-yo').srcObject = null;
   document.getElementById('audio-remoto').srcObject = null;
   document.getElementById('pantalla-llamada').style.display = 'none';
-  document.getElementById('pantalla-seleccion').style.display = 'block';
-  setEstado('Activando cámara...');
+  // Recargar la página para liberar cámara/mic completamente
+  setTimeout(function() {
+    window.location.reload();
+  }, 500);
 }
 
 function setEstado(txt, cls) {
