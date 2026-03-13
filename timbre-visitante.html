@@ -177,6 +177,14 @@
 
 <div id="toast"></div>
 
+  <!-- PANTALLA DESPEDIDA -->
+  <div id="pantalla-gracias" style="display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:100;padding:40px;text-align:center;">
+    <div style="font-size:64px;">✅</div>
+    <div style="font-size:22px;font-weight:700;color:var(--texto);">Llamada finalizada</div>
+    <div style="font-size:15px;color:var(--suave);line-height:1.6;">Gracias por usar el portero digital<br>de Blanco Encalada 3225.</div>
+    <div style="font-size:13px;color:var(--suave);margin-top:16px;">Podés cerrar esta ventana.</div>
+  </div>
+
 <!-- Firebase — múltiples CDN como fallback -->
 <script>
 window.addEventListener('load', function() {
@@ -436,10 +444,8 @@ async function colgar(notif) {
   document.getElementById('video-yo').srcObject = null;
   document.getElementById('audio-remoto').srcObject = null;
   document.getElementById('pantalla-llamada').style.display = 'none';
-  // Recargar la página para liberar cámara/mic completamente
-  setTimeout(function() {
-    window.location.reload();
-  }, 500);
+  // Mostrar pantalla de despedida
+  document.getElementById('pantalla-gracias').style.display = 'flex';
 }
 
 function setEstado(txt, cls) {
