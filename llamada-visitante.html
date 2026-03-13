@@ -248,7 +248,25 @@ async function iniciarLlamada(n) {
       }
     }
 
-    // 3. PeerConnection
+    // 3. Capturar foto cada 2s y subirla a Firebase para preview del residente
+    if (localStream && localStream.getVideoTracks().length > 0) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 320; canvas.height = 240;
+      const ctx = canvas.getContext('2d');
+      const videoEl = document.getElementById('video-yo');
+      const fotoInterval = setInterval(function() {
+        if (!localStream) { clearInterval(fotoInterval); return; }
+        try {
+          ctx.drawImage(videoEl, 0, 0, 320, 240);
+          const foto = canvas.toDataURL('image/jpeg', 0.5);
+          callRef.update({ preview: foto });
+        } catch(e) {}
+      }, 2000);
+      // Guardar para limpiar al colgar
+      window._fotoInterval = fotoInterval;
+    }
+
+    // 4. PeerConnection
     pc = new RTCPeerConnection(ICE);
     if (localStream) localStream.getTracks().forEach(function(t) { pc.addTrack(t, localStream); });
 
@@ -306,6 +324,7 @@ function colgar(notif) {
   llamadaConectada = false;
   // Cleanup sin await para no bloquear la redirección
   try { if (wakeLock) wakeLock.release(); } catch(e) {}
+  try { if (window._fotoInterval) { clearInterval(window._fotoInterval); window._fotoInterval = null; } } catch(e) {}
   try { if (callRef) { callRef.update({ status: 'ended' }); callRef.off(); callRef = null; } } catch(e) {}
   try { if (pc) { pc.close(); pc = null; } } catch(e) {}
   try { if (localStream) { localStream.getTracks().forEach(function(t) { t.stop(); }); localStream = null; } } catch(e) {}
