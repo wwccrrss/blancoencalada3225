@@ -258,6 +258,12 @@
 
 <div id="toast"></div>
 
+<!-- PANTALLA FIN DE LLAMADA -->
+<div id="pantalla-fin" style="display:none;position:fixed;inset:0;background:#111;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:100;text-align:center;">
+  <div style="font-size:56px;">📵</div>
+  <div style="font-size:20px;font-weight:600;color:#fff;">Llamada finalizada</div>
+</div>
+
 <!-- Firebase — múltiples CDN como fallback -->
 <script>
 // El loader se ejecuta cuando el DOM está listo, así las funciones ya están definidas
@@ -558,13 +564,18 @@ function mostrarLlamadaEntrante() {
   // Escuchar si el visitante colgó antes de atender
   callRef.child('status').on('value', function(snap) {
     if (snap.val() === 'ended' || snap.val() === 'rejected') {
+      if (!callRef) return; // ya colgó el residente
       detenerRing();
-      // Liberar mic y PC antes de volver al standby
       if (pc) { pc.close(); pc = null; }
       if (micStream) { micStream.getTracks().forEach(function(t) { t.stop(); }); micStream = null; }
       document.getElementById('video-visitante').srcObject = null;
-      volverStandby();
-      toast('El visitante cortó');
+      callRef.off(); callRef = null;
+      document.getElementById('pantalla-llamada').style.display = 'none';
+      document.getElementById('pantalla-fin').style.display = 'flex';
+      setTimeout(function() {
+        document.getElementById('pantalla-fin').style.display = 'none';
+        volverStandby();
+      }, 3000);
     }
   });
 
@@ -654,7 +665,14 @@ async function colgar() {
   if (micStream) { micStream.getTracks().forEach(function(t) { t.stop(); }); micStream = null; }
   if (callRef) { await callRef.update({ status: 'ended' }).catch(function(){}); callRef.off(); callRef = null; }
   document.getElementById('video-visitante').srcObject = null;
-  volverStandby();
+  // Mostrar pantalla de fin de llamada en lugar de standby
+  document.getElementById('pantalla-llamada').style.display = 'none';
+  document.getElementById('pantalla-fin').style.display = 'flex';
+  // Volver al standby después de 3 segundos
+  setTimeout(function() {
+    document.getElementById('pantalla-fin').style.display = 'none';
+    volverStandby();
+  }, 3000);
 }
 
 function volverStandby() {
