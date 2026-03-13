@@ -498,15 +498,18 @@ function escuchar() {
   if (escRef) escRef.off();
   escRef = db.ref('calls').orderByChild('deptoId').equalTo(miDepto);
 
-  // Si viene desde notificación ntfy, mostrar llamada directamente
+  // Si viene desde notificación ntfy, verificar que la llamada sigue activa
   if (pendingCallId) {
     var pid = pendingCallId;
     pendingCallId = null;
     callRef = db.ref('calls/' + pid);
     callRef.once('value').then(function(snap) {
-      if (snap.val() && snap.val().status === 'ringing') {
-        mostrarLlamadaEntrante();
-      }
+      var call = snap.val();
+      if (!call) { toast('La llamada ya no está disponible'); return; }
+      if (call.status !== 'ringing') { toast('Llamada ya finalizada'); return; }
+      var edad = Date.now() - (call.timestamp || 0);
+      if (edad > 120000) { toast('Llamada expirada'); return; } // más de 2 minutos
+      mostrarLlamadaEntrante();
     });
   }
 
