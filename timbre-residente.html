@@ -211,7 +211,7 @@
   <video id="video-visitante" autoplay playsinline muted></video>
 
   <!-- Pantalla de llamada entrante (antes de atender) -->
-  <div id="incoming-screen" style="position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:60px 24px 64px;box-sizing:border-box;background:linear-gradient(160deg,#0a1628 0%,#0d2137 50%,#091420 100%);">
+  <div id="incoming-screen" style="position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:60px 24px 64px;box-sizing:border-box;background:linear-gradient(160deg,rgba(10,22,40,0.75) 0%,rgba(13,33,55,0.70) 50%,rgba(9,20,32,0.75) 100%);backdrop-filter:blur(4px);">
     
     <!-- Parte superior: info -->
     <div style="display:flex;flex-direction:column;align-items:center;gap:12px;animation:fadeSlideDown .4s ease forwards;">
@@ -540,6 +540,42 @@ function procesarLlamada(snap) {
 }
 
 /* — LLAMADA ENTRANTE — */
+async function preConectarVideo() {
+  try {
+    // Solo micrófono para recibir video del visitante antes de atender
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] });
+    micStream.getTracks().forEach(function(t) { pc.addTrack(t, micStream); });
+    pc.ontrack = function(e) {
+      if (e.streams && e.streams[0]) {
+        const video = document.getElementById('video-visitante');
+        video.srcObject = e.streams[0];
+        video.muted = false;
+        video.play().catch(function() { video.muted = true; video.play(); });
+      }
+    };
+    pc.onicecandidate = function(e) {
+      if (e.candidate && callRef) {
+        callRef.child('residentCandidates').push(e.candidate.toJSON());
+      }
+    };
+    // Leer offer del visitante
+    const snap = await callRef.once('value');
+    const offer = snap.val().offer;
+    if (!offer) return;
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    await callRef.update({ answer: { type: answer.type, sdp: answer.sdp }, status: 'answered' });
+    // Agregar ICE candidates del visitante
+    callRef.child('visitorCandidates').on('child_added', function(snap) {
+      if (pc) pc.addIceCandidate(new RTCIceCandidate(snap.val())).catch(function(){});
+    });
+  } catch(e) {
+    console.warn('preConectarVideo error:', e);
+  }
+}
+
 function mostrarLlamadaEntrante() {
   document.getElementById('pantalla-standby').style.display = 'none';
   const pl = document.getElementById('pantalla-llamada');
@@ -559,6 +595,9 @@ function mostrarLlamadaEntrante() {
   }
 
   iniciarRing();
+
+  // Iniciar WebRTC ya para que el video se vea de fondo antes de atender
+  preConectarVideo();
 
   // Escuchar si el visitante colgó antes de atender
   callRef.child('status').on('value', function(snap) {
@@ -588,19 +627,20 @@ function mostrarLlamadaEntrante() {
 
 /* — ATENDER — */
 async function atender() {
-  detenerRing(); // detener ring inmediatamente al tocar atender
+  detenerRing();
   document.getElementById('btns-entrante').style.display = 'none';
   document.getElementById('btn-colgar').style.display = 'flex';
   document.getElementById('ring-flash').style.display = 'none';
-  document.getElementById('llamada-estado').textContent = 'Conectando...';
-  // Ocultar pantalla de llamada entrante
+  document.getElementById('llamada-estado').textContent = '';
+  // Ocultar pantalla de llamada entrante — el video ya está de fondo
   const incomingScreen = document.getElementById('incoming-screen');
   if (incomingScreen) incomingScreen.style.display = 'none';
-  // Cancelar cualquier tono pendiente cerrando y recreando el contexto de audio
   if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
 
+  // Si preConectarVideo ya estableció la conexión, no hacer nada más
+  if (pc && micStream) { return; }
+
   try {
-    // Solo micrófono para el residente; video viene del visitante
     micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
     pc = new RTCPeerConnection(ICE);
