@@ -133,23 +133,20 @@
 <body>
 
 <div class="header">
-  <div class="edificio-nombre">Portero Digital</div>
   <div class="edificio-dir">Blanco Encalada 3225</div>
   <div class="divider"></div>
 </div>
 
 <div class="panel">
-  <div class="panel-titulo">Seleccioná el departamento al que llamás</div>
+  <div id="pantalla-seleccion" style="display:none">
+    <div class="deptos-grid" id="grid"></div>
+  </div>
 
   <!-- Diagnóstico visible — desaparece solo cuando todo está ok -->
-  <div id="diag-box">
+  <div id="diag-box" style="margin-top:auto;padding-top:16px;">
     <div class="dl d-wai" id="d1">⏳ Cargando Firebase SDK...</div>
     <div class="dl d-wai" id="d2">⏳ Inicializando app...</div>
     <div class="dl d-wai" id="d3">⏳ Conectando a la base de datos...</div>
-  </div>
-
-  <div id="pantalla-seleccion" style="display:none">
-    <div class="deptos-grid" id="grid"></div>
   </div>
 
   <div id="pantalla-llamada">
