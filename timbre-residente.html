@@ -554,8 +554,12 @@ function mostrarLlamadaEntrante() {
 
   // Escuchar si el visitante colgó antes de atender
   callRef.child('status').on('value', function(snap) {
-    if (snap.val() === 'ended') {
+    if (snap.val() === 'ended' || snap.val() === 'rejected') {
       detenerRing();
+      // Liberar mic y PC antes de volver al standby
+      if (pc) { pc.close(); pc = null; }
+      if (micStream) { micStream.getTracks().forEach(function(t) { t.stop(); }); micStream = null; }
+      document.getElementById('video-visitante').srcObject = null;
       volverStandby();
       toast('El visitante cortó');
     }
