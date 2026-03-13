@@ -71,7 +71,7 @@
   .depto-label { font-size: 8px; letter-spacing: 1px; color: var(--suave); text-transform: uppercase; margin-top: 2px; }
 
   /* LLAMADA */
-  #pantalla-llamada { display: none; flex-direction: column; align-items: center; gap: 16px; }
+  #pantalla-llamada { display: none; position: fixed; inset: 0; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--fondo); z-index: 50; }
   .llamando-depto { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: var(--oro); line-height: 1; }
   .llamando-sub { font-size: 13px; color: var(--suave); letter-spacing: 2px; text-transform: uppercase; }
 
@@ -321,7 +321,11 @@ function renderGrid() {
 
 /* ── LLAMADA ── */
 async function llamar(n) {
+  // Ocultar todo el panel de selección inmediatamente
   document.getElementById('pantalla-seleccion').style.display = 'none';
+  document.querySelector('.panel').style.display = 'none';
+  document.querySelector('.header').style.display = 'none';
+  document.getElementById('diag-box').style.display = 'none';
   document.getElementById('pantalla-llamada').style.display = 'flex';
   document.getElementById('depto-num').textContent = n;
   setEstado('Conectando...');
