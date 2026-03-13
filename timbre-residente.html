@@ -79,9 +79,42 @@
 
   /* LLAMADA PANTALLA COMPLETA */
   #pantalla-llamada {
-    display: none; flex-direction: column; align-items: center;
+    display: none; flex-direction: column; align-items: center; justify-content: space-between;
     width: 100%; height: 100vh;
-    position: fixed; inset: 0; background: #000; z-index: 50;
+    position: fixed; inset: 0; z-index: 50;
+    background: linear-gradient(160deg, #0a1628 0%, #0d2137 40%, #091420 100%);
+    padding: 60px 24px 64px;
+    box-sizing: border-box;
+  }
+  #pantalla-llamada.entrante {
+    animation: entradaLlamada 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes entradaLlamada {
+    from { opacity: 0; transform: scale(1.04); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .pulse-ring {
+    position: absolute;
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    border: 2px solid rgba(138,180,212,.35);
+    animation: pulsoAnillo 2.5s var(--delay, 0s) ease-out infinite;
+  }
+  @keyframes pulsoAnillo {
+    0%   { transform: scale(1);   opacity: .7; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+  @keyframes pulsarVerde {
+    0%, 100% { box-shadow: 0 0 0 8px rgba(39,174,96,.2); }
+    50%       { box-shadow: 0 0 0 16px rgba(39,174,96,.1); }
+  }
+  @keyframes fadeSlideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
   #video-visitante {
     width: 100%; height: 100%; object-fit: cover;
@@ -177,17 +210,47 @@
   <div class="ring-flash" id="ring-flash"></div>
   <video id="video-visitante" autoplay playsinline muted></video>
 
-  <div class="overlay-top">
+  <!-- Pantalla de llamada entrante (antes de atender) -->
+  <div id="incoming-screen" style="position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:60px 24px 64px;box-sizing:border-box;background:linear-gradient(160deg,#0a1628 0%,#0d2137 50%,#091420 100%);">
+    
+    <!-- Parte superior: info -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;animation:fadeSlideDown .4s ease forwards;">
+      <div style="font-size:13px;letter-spacing:3px;text-transform:uppercase;color:#8ab4d4;font-family:'DM Sans',sans-serif;">Llamada entrante</div>
+      <div style="font-size:36px;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif;text-align:center;">Puerta del edificio</div>
+      <div style="font-size:15px;color:#8ab4d4;">Blanco Encalada 3225</div>
+    </div>
+
+    <!-- Centro: avatar animado con pulso -->
+    <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+      <div class="pulse-ring" style="--delay:0s"></div>
+      <div class="pulse-ring" style="--delay:.5s"></div>
+      <div class="pulse-ring" style="--delay:1s"></div>
+      <div style="width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#1e4d7a,#0d2137);border:3px solid rgba(138,180,212,.3);display:flex;align-items:center;justify-content:center;font-size:52px;position:relative;z-index:2;">🏢</div>
+    </div>
+
+    <!-- Parte inferior: botones -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;animation:fadeSlideUp .5s .1s ease both;">
+      <div id="llamada-estado" style="font-size:14px;color:#8ab4d4;letter-spacing:1px;min-height:20px;"></div>
+      <div id="btns-entrante" style="display:flex;gap:56px;align-items:center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <button class="btn-acc btn-rojo" onclick="rechazar()" style="width:72px;height:72px;font-size:30px;border-radius:50%;border:none;cursor:pointer;background:#e74c3c;box-shadow:0 0 0 8px rgba(231,76,60,.15);display:flex;align-items:center;justify-content:center;transition:transform .15s;">📵</button>
+          <span style="font-size:12px;color:#8ab4d4;">Rechazar</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <button class="btn-acc btn-verde" onclick="atender()" style="width:72px;height:72px;font-size:30px;border-radius:50%;border:none;cursor:pointer;background:#27ae60;box-shadow:0 0 0 8px rgba(39,174,96,.2);display:flex;align-items:center;justify-content:center;transition:transform .15s;animation:pulsarVerde 1.5s infinite;">📞</button>
+          <span style="font-size:12px;color:#8ab4d4;">Atender</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay-top" style="display:none;">
     <div class="ot-label">Llamada desde la puerta</div>
     <div class="ot-depto">Blanco Encalada 3225</div>
   </div>
 
-  <div class="llamada-estado" id="llamada-estado">Tocando el timbre...</div>
-
   <div class="overlay-bottom">
-    <div id="btns-entrante" style="display:flex;gap:44px">
-      <button class="btn-acc btn-rojo"  onclick="rechazar()">📵</button>
-      <button class="btn-acc btn-verde" onclick="atender()">📞</button>
+    <div id="btns-entrante-old" style="display:none;gap:44px">
     </div>
     <button class="btn-acc btn-rojo" id="btn-colgar" style="display:none" onclick="colgar()">📵</button>
   </div>
@@ -468,11 +531,13 @@ function procesarLlamada(snap) {
 /* — LLAMADA ENTRANTE — */
 function mostrarLlamadaEntrante() {
   document.getElementById('pantalla-standby').style.display = 'none';
-  document.getElementById('pantalla-llamada').style.display = 'flex';
+  const pl = document.getElementById('pantalla-llamada');
+  pl.style.display = 'flex';
+  pl.classList.add('entrante');
   document.getElementById('btns-entrante').style.display = 'flex';
   document.getElementById('btn-colgar').style.display = 'none';
   document.getElementById('ring-flash').style.display = 'block';
-  document.getElementById('llamada-estado').textContent = 'Tocando el timbre...';
+  document.getElementById('llamada-estado').textContent = '';
 
   iniciarRing();
 
@@ -500,6 +565,9 @@ async function atender() {
   document.getElementById('btn-colgar').style.display = 'flex';
   document.getElementById('ring-flash').style.display = 'none';
   document.getElementById('llamada-estado').textContent = 'Conectando...';
+  // Ocultar pantalla de llamada entrante
+  const incomingScreen = document.getElementById('incoming-screen');
+  if (incomingScreen) incomingScreen.style.display = 'none';
   // Cancelar cualquier tono pendiente cerrando y recreando el contexto de audio
   if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
 
