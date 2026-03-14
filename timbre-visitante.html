@@ -236,10 +236,14 @@ const ICE = { iceServers: [
 let db, pc, localStream, callRef, llamadaConectada = false, wakeLock = null;
 
 function d(id, tipo, txt) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.className = 'dl d-' + tipo;
-  el.textContent = (tipo === 'ok' ? '✅' : tipo === 'err' ? '❌' : '⏳') + ' ' + txt;
+  const box = document.getElementById('diag-box');
+  if (!box) return;
+  if (tipo === 'err') {
+    box.textContent = '⚠️ ' + txt;
+    box.style.color = '#f85149';
+  } else if (tipo === 'ok' && id === 'd3') {
+    box.style.display = 'none'; // ocultar cuando todo está listo
+  }
 }
 
 function sdkError() {
