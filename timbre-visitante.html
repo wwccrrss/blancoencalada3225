@@ -141,25 +141,7 @@
   <div id="pantalla-seleccion" style="display:none">
     <div class="deptos-grid" id="grid"></div>
   </div>
-
-  <!-- Diagnóstico visible — desaparece solo cuando todo está ok -->
-  <div id="diag-box" style="margin-top:auto;padding-top:16px;">
-    <div class="dl d-wai" id="d1">⏳ Cargando Firebase SDK...</div>
-    <div class="dl d-wai" id="d2">⏳ Inicializando app...</div>
-    <div class="dl d-wai" id="d3">⏳ Conectando a la base de datos...</div>
-  </div>
-
-  <div id="pantalla-llamada">
-    <div style="text-align:center">
-      <div class="llamando-sub">Llamando al depto</div>
-      <div class="llamando-depto" id="depto-num">—</div>
-    </div>
-    <div class="pulso-ring" id="pulso"><span class="icono-c">📞</span></div>
-    <video id="video-yo" autoplay muted playsinline></video>
-    <audio id="audio-remoto" autoplay playsinline></audio>
-    <div class="estado" id="estado">Activando cámara...</div>
-    <button class="btn-colgar" onclick="colgar()">📵</button>
-  </div>
+  <div id="diag-box" style="text-align:center;padding:8px 0;font-size:12px;color:var(--suave);">Conectando...</div>
 </div>
 
 <div class="aviso-legal">
