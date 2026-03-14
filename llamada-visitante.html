@@ -251,13 +251,14 @@ async function iniciarLlamada(n) {
     // 3. Capturar foto cada 2s y subirla a Firebase para preview del residente
     if (localStream && localStream.getVideoTracks().length > 0) {
       const canvas = document.createElement('canvas');
-      canvas.width = 320; canvas.height = 240;
-      const ctx = canvas.getContext('2d');
       const videoEl = document.getElementById('video-yo');
+      const ctx = canvas.getContext('2d');
       const fotoInterval = setInterval(function() {
         if (!localStream) { clearInterval(fotoInterval); return; }
         try {
-          ctx.drawImage(videoEl, 0, 0, 320, 240);
+          canvas.width = videoEl.videoWidth || 320;
+          canvas.height = videoEl.videoHeight || 240;
+          ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
           const foto = canvas.toDataURL('image/jpeg', 0.5);
           callRef.update({ preview: foto });
         } catch(e) {}

@@ -211,7 +211,6 @@
   <video id="video-visitante" autoplay playsinline muted></video>
   <img id="preview-visitante" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:6;opacity:1;" />
   <audio id="audio-visitante" autoplay playsinline></audio>
-  <audio id="audio-visitante" autoplay playsinline></audio>
 
   <!-- Pantalla de llamada entrante (antes de atender) -->
   <div id="incoming-screen" style="position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 24px 72px;box-sizing:border-box;background:linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 45%);">
@@ -598,8 +597,12 @@ async function atender() {
   // Ocultar pantalla de llamada entrante — el video ya está de fondo
   const incomingScreen = document.getElementById('incoming-screen');
   if (incomingScreen) incomingScreen.style.display = 'none';
-  document.getElementById('preview-visitante').style.display = 'none';
+  var img = document.getElementById('preview-visitante');
+  img.style.display = 'none';
+  img.src = '';
   document.getElementById('pantalla-llamada').style.background = '';
+  // Detener listener de preview
+  if (callRef) callRef.child('preview').off();
   if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
 
   try {
@@ -671,8 +674,13 @@ async function colgar() {
   if (callRef) { await callRef.update({ status: 'ended' }).catch(function(){}); callRef.off(); callRef = null; }
   document.getElementById('video-visitante').srcObject = null;
   document.getElementById('audio-visitante').srcObject = null;
-  document.getElementById('preview-visitante').style.display = 'none';
   document.getElementById('pantalla-llamada').style.background = '';
+  var img = document.getElementById('preview-visitante');
+  img.style.display = 'none';
+  img.src = '';
+  document.getElementById('pantalla-llamada').style.background = '';
+  // Detener listener de preview
+  if (callRef) callRef.child('preview').off();
   document.getElementById('pantalla-llamada').style.display = 'none';
   if (abrioDesdeNotificacion) {
     cerrarApp();
