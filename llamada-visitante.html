@@ -215,16 +215,21 @@ async function iniciarLlamada(n) {
     navigator.wakeLock.request('screen').then(function(wl) { wakeLock = wl; }).catch(function(){});
   }
 
-  // ntfy — enviar inmediatamente
-  fetch('https://ntfy.sh/portero-be3225-depto' + n, {
-    method: 'POST',
-    headers: {
-      'Title': 'Llamada Depto ' + n,
-      'Priority': 'urgent',
-      'Tags': 'bell',
-      'Click': 'https://wwccrrss.github.io/blancoencalada3225/timbre-residente.html?depto=' + n + '&callId=' + callId
-    },
-    body: 'Alguien tocó el timbre en Blanco Encalada 3225'
+  // Leer canal privado ntfy del residente desde Firebase y enviar notificación
+  db.ref('canales/depto' + n).once('value').then(function(snap) {
+    const canal = snap.val() && snap.val().canal;
+    if (canal) {
+      fetch('https://ntfy.sh/' + canal, {
+        method: 'POST',
+        headers: {
+          'Title': 'Llamada Depto ' + n,
+          'Priority': 'urgent',
+          'Tags': 'bell',
+          'Click': 'https://wwccrrss.github.io/blancoencalada3225/timbre-residente.html?depto=' + n + '&callId=' + callId
+        },
+        body: 'Alguien tocó el timbre en Blanco Encalada 3225'
+      }).catch(function(){});
+    }
   }).catch(function(){});
 
   try {

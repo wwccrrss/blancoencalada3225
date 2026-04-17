@@ -200,7 +200,12 @@
     <div style="font-size:22px;font-weight:700;color:var(--texto);">Portero Digital</div>
     <div style="font-size:15px;color:var(--suave);">Depto <span id="standby-num">—</span></div>
     <div style="font-size:13px;color:var(--verde);display:flex;align-items:center;gap:6px;"><div class="dot"></div> Timbre activo</div>
-    <button onclick="window.close()" style="margin-top:24px;padding:12px 28px;background:#C9A84C;color:#111;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">Cerrar</button>
+    <div style="margin-top:20px;padding:16px;background:rgba(255,255,255,0.05);border-radius:12px;width:100%;">
+      <div style="font-size:12px;color:var(--suave);margin-bottom:8px;">Para recibir llamadas instalá <strong>ntfy</strong> y suscribite al canal:</div>
+      <div id="standby-canal" style="font-size:13px;font-weight:700;color:var(--oro);letter-spacing:1px;word-break:break-all;">—</div>
+      <div style="font-size:11px;color:var(--suave);margin-top:6px;">Hacé esto una sola vez. Todos en el depto pueden suscribirse al mismo canal.</div>
+    </div>
+    <button onclick="window.close()" style="margin-top:8px;padding:12px 28px;background:#C9A84C;color:#111;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">Cerrar</button>
     <button class="btn-link" onclick="cambiarDepto()" style="margin-top:4px;">Cambiar departamento</button>
   </div>
 </div>
@@ -393,11 +398,30 @@ function configurarDepto() {
   activarDepto(val);
 }
 
+function generarCanalNtfy() {
+  // Generar canal aleatorio único para este depto
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let id = '';
+  for (let i = 0; i < 8; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return 'portero-be3225-' + id;
+}
+
 function activarDepto(n) {
   miDepto = n;
   localStorage.setItem('portero_depto', n);
+
+  // Obtener o generar canal ntfy privado
+  let canal = localStorage.getItem('portero_canal_' + n);
+  if (!canal) {
+    canal = generarCanalNtfy();
+    localStorage.setItem('portero_canal_' + n, canal);
+  }
+  // Guardar canal en Firebase para que el visitante lo encuentre
+  db.ref('canales/depto' + n).set({ canal: canal });
+
   document.getElementById('pantalla-config').style.display = 'none';
   document.getElementById('standby-num').textContent = n;
+  document.getElementById('standby-canal').textContent = canal;
   // Solo mostrar standby si NO viene desde notificación
   if (!abrioDesdeNotificacion) {
     document.getElementById('pantalla-standby').style.display = 'flex';
