@@ -1,71 +1,20 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Timbre Digital — Blanco Encalada 3225</title>
-  <style>
-    :root {
-      --oro: #C9A84C;
-      --oro-claro: #E8D08A;
-      --oro-oscuro: #8B6914;
-      --bg: #1a1a1a;
-      --panel: #232323;
-      --panel-borde: #2e2e2e;
-      --texto: #e8e0d0;
-      --suave: #888;
-      --rojo: #c0392b;
-      --verde: #27ae60;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body {
-      background: var(--bg);
-      color: var(--texto);
-      font-family: sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 20px 16px 40px;
-    }
-    .header { width: 100%; max-width: 420px; text-align: center; margin-bottom: 24px; padding-top: 8px; }
-    .edificio-nombre { font-size: 11px; letter-spacing: 4px; color: var(--oro); font-family: sans-serif; }
-    .edificio-dir { font-size: 22px; font-weight: 300; }
-    .divider { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--oro), transparent); margin: 12px auto; }
-    .panel {
-      width: 100%; max-width: 420px;
-      background: var(--panel); border: 1px solid var(--panel-borde);
-      border-radius: 16px; padding: 24px 20px;
-      box-shadow: 0 8px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.04);
-    }
-    .panel-titulo { font-size: 11px; letter-spacing: 3px; color: var(--suave); text-align: center; margin-bottom: 20px; font-family: sans-serif; }
-    .depto-num { font-size: 26px; color: var(--oro-claro); line-height: 1; font-family: sans-serif; }
-    .llamando-depto { font-size: 48px; color: var(--oro); line-height: 1; font-family: sans-serif; }
-    /* El resto del CSS tal como estaba, cambiando únicamente los font-family: 'Bebas Neue', sans-serif por sans-serif */
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timbre Visitante</title>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
+    <style>
+        body {
+            font-family: 'Bebas Neue', sans-serif;
+        }
+        /* Otros estilos aquí */
+    </style>
 </head>
 <body>
-  <div class="header">
-    <div class="edificio-dir">Blanco Encalada 3225</div>
-    <div class="divider"></div>
-  </div>
-  <div class="panel">
-    <div id="pantalla-seleccion" style="display:none">
-      <div class="deptos-grid" id="grid"></div>
-    </div>
-    <div id="diag-box" style="text-align:center;padding:8px 0;font-size:12px;color:var(--suave);">Conectando...</div>
-  </div>
-  <div class="aviso-legal">
-    <p>
-      Al tocar un departamento se activará su cámara para que el residente pueda identificarlo en tiempo real.<br>
-      La conexión es directa y privada entre dispositivos (WebRTC).<br>
-      NO se graban ni almacenan imágenes, audio ni datos personales.<br>
-      Conforme a la Ley 25.326 de Protección de Datos Personales.<br>
-      La utilización del sistema implica la aceptación de estos términos.
-    </p>
-  </div>
-  <div id="toast"></div>
-  <!-- El resto del HTML se mantiene igual -->
+    <h1>Bienvenido al Timbre Visitante</h1>
+    <p>Por favor presione el botón para ser atendido.</p>
+    <button>Presionar</button>
 </body>
 </html>
