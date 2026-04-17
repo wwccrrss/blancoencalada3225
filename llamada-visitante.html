@@ -25,11 +25,11 @@
   #video-yo {
     position: relative;
     width: 120px;
-    height: 160px;
+    height: 120px;
     object-fit: cover;
     z-index: 5;
-    border-radius: 12px;
-    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.2);
     transform: scaleX(-1);
     flex-shrink: 0;
   }
@@ -71,8 +71,8 @@
   /* Pulso animado */
   .pulso-ring {
     position: relative;
-    width: 160px;
-    height: 160px;
+    width: 100px;
+    height: 100px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -86,8 +86,8 @@
   }
   .pulso-ring::after { animation-delay: 0.6s; }
   @keyframes pulso {
-    0% { width: 120px; height: 120px; opacity: 0.8; }
-    100% { width: 200px; height: 200px; opacity: 0; }
+    0% { width: 100px; height: 100px; opacity: 0.8; }
+    100% { width: 160px; height: 160px; opacity: 0; }
   }
 
   .estado {
@@ -144,7 +144,7 @@
 
 <div class="overlay">
   <!-- Cámara propia arriba centrada -->
-  <video id="video-yo" autoplay muted playsinline></video>
+  <video id="video-yo" autoplay muted playsinline width="120" height="120"></video>
 
   <!-- Número de depto con anillos -->
   <div style="display:flex;flex-direction:column;align-items:center;gap:12px;flex:1;justify-content:center;">
