@@ -92,7 +92,7 @@
   .icono-c { font-size: 32px; z-index: 1; }
 
   #video-yo {
-    width: 100px; height: 75px; border-radius: 8px;
+    width: 100px; height: 100px; border-radius: 50%; /* Modificado para ser un círculo */
     object-fit: cover; border: 1px solid var(--oro-oscuro);
     background: #000; transform: scaleX(-1);
   }
@@ -156,7 +156,6 @@
 
 <div id="toast"></div>
 
-  <!-- PANTALLA DESPEDIDA -->
   <div id="pantalla-gracias" style="display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:100;padding:40px;text-align:center;">
     <div style="font-size:64px;">✅</div>
     <div style="font-size:22px;font-weight:700;color:var(--texto);">Llamada finalizada</div>
@@ -164,7 +163,6 @@
     <button onclick="window.close()" style="margin-top:8px;padding:14px 32px;background:var(--dorado);color:#111;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:1px;">Cerrar</button>
   </div>
 
-<!-- Firebase — múltiples CDN como fallback -->
 <script>
 window.addEventListener('load', function() {
   function tryLoad(urls, idx, onSuccess, onFail) {
@@ -389,61 +387,4 @@ async function llamar_UNUSED(n) {
       if (snap.val() && pc && !pc.currentRemoteDescription) {
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
-          setEstado('✓ Conectado', 'conectado'); llamadaConectada = true;
-          document.getElementById('pulso').querySelector('.icono-c').textContent = '🎙️';
-        } catch(e) {}
-      }
-    });
-
-    callRef.child('residentCandidates').on('child_added', async function(snap) {
-      if (snap.val() && pc) try { await pc.addIceCandidate(new RTCIceCandidate(snap.val())); } catch(e) {}
-    });
-
-    callRef.child('status').on('value', function(snap) {
-      if (snap.val() === 'ended' || snap.val() === 'rejected') {
-        colgar(false);
-        toast(snap.val() === 'rejected' ? 'Sin respuesta' : 'Llamada finalizada');
-      }
-    });
-
-    setTimeout(function() {
-      if (!llamadaConectada) {
-        colgar(true); toast('Sin respuesta');
-      }
-    }, 90000);
-
-  } catch(err) {
-    setEstado('Error: ' + err.message, 'error');
-    setTimeout(function() { colgar(false); }, 4000);
-  }
-}
-
-async function colgar(notif) {
-  llamadaConectada = false;
-  if (wakeLock) { try { wakeLock.release(); } catch(e) {} wakeLock = null; }
-
-  if (notif !== false && callRef) { try { await callRef.update({ status: 'ended' }); } catch(e) {} }
-  if (callRef) { callRef.off(); callRef = null; }
-  if (pc) { pc.close(); pc = null; }
-  if (localStream) { localStream.getTracks().forEach(function(t) { t.stop(); }); localStream = null; }
-  document.getElementById('video-yo').srcObject = null;
-  document.getElementById('audio-remoto').srcObject = null;
-  document.getElementById('pantalla-llamada').style.display = 'none';
-  // Mostrar pantalla de despedida
-  document.getElementById('pantalla-gracias').style.display = 'flex';
-}
-
-function setEstado(txt, cls) {
-  const el = document.getElementById('estado');
-  el.textContent = txt;
-  el.className = 'estado' + (cls ? ' ' + cls : '');
-}
-
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('visible');
-  setTimeout(function() { t.classList.remove('visible'); }, 3000);
-}
-</script>
-</body>
-</html>
+          setEstado('✓ Conectado', 'conectado'); llamada
