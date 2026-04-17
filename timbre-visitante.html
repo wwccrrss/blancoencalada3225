@@ -15,7 +15,6 @@
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
 
 
-
   :root {
 
     --oro: #C9A84C;
@@ -41,9 +40,7 @@
   }
 
 
-
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
 
 
   body {
@@ -69,7 +66,6 @@
   }
 
 
-
   .header { width: 100%; max-width: 420px; text-align: center; margin-bottom: 24px; padding-top: 8px; }
 
   .edificio-nombre { font-family: 'Bebas Neue', sans-serif; font-size: 11px; letter-spacing: 4px; color: var(--oro); }
@@ -77,7 +73,6 @@
   .edificio-dir { font-size: 22px; font-weight: 300; }
 
   .divider { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--oro), transparent); margin: 12px auto; }
-
 
 
   .panel {
@@ -93,7 +88,6 @@
   }
 
   .panel-titulo { font-family: 'Bebas Neue', sans-serif; font-size: 11px; letter-spacing: 3px; color: var(--suave); text-align: center; margin-bottom: 20px; }
-
 
 
   /* DIAGNÓSTICO */
@@ -115,7 +109,6 @@
   .d-err { color: #f85149; }
 
   .d-wai { color: #d29922; }
-
 
 
   /* GRID */
@@ -141,7 +134,6 @@
   .depto-label { font-size: 11px; letter-spacing: 1px; color: var(--suave); text-transform: lowercase; margin-top: 2px; }
 
 
-
   /* LLAMADA */
 
   #pantalla-llamada { display: none; }
@@ -149,7 +141,6 @@
   .llamando-depto { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: var(--oro); line-height: 1; }
 
   .llamando-sub { font-size: 13px; color: var(--suave); letter-spacing: 2px; text-transform: uppercase; }
-
 
 
   .pulso-ring {
@@ -183,7 +174,6 @@
   .icono-c { font-size: 32px; z-index: 1; }
 
 
-
   #video-yo {
 
     width: 100px; height: 100px; border-radius: 50%;
@@ -197,13 +187,11 @@
   #audio-remoto { display: none; }
 
 
-
   .estado { font-size: 14px; color: var(--suave); text-align: center; }
 
   .estado.conectado { color: var(--verde); font-weight: 500; }
 
   .estado.error { color: var(--rojo); }
-
 
 
   .btn-colgar {
@@ -223,7 +211,6 @@
   .btn-colgar:active { transform: scale(.9); }
 
 
-
   .aviso-legal {
 
     width: 100%; max-width: 420px; margin-top: 20px;
@@ -237,7 +224,6 @@
   .aviso-legal p { font-size: 10.5px; color: #666; line-height: 1.6; text-align: center; }
 
   .aviso-legal strong { color: #888; font-weight: 500; }
-
 
 
   #toast {
@@ -265,7 +251,6 @@
 <body>
 
 
-
 <div class="header">
 
   <div class="edificio-dir">Blanco Encalada 3225</div>
@@ -273,7 +258,6 @@
   <div class="divider"></div>
 
 </div>
-
 
 
 <div class="panel">
@@ -287,7 +271,6 @@
   <div id="diag-box" style="text-align:center;padding:8px 0;font-size:12px;color:var(--suave);">Conectando...</div>
 
 </div>
-
 
 
 <div class="aviso-legal">
@@ -305,29 +288,23 @@
     La utilización del sistema implica la aceptación de estos términos.
 
   </p>
-
 </div>
-
 
 
 <div id="toast"></div>
 
-
-
   <!-- PANTALLA DESPEDIDA -->
 
-  <div id="pantalla-gracias" style="display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:100;padding:40px;text-align:center;">
-
+  <div id="pantalla-gracias" style="display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:100;padding:40px;text-ali[...]  
     <div style="font-size:64px;">✅</div>
 
     <div style="font-size:22px;font-weight:700;color:var(--texto);">Llamada finalizada</div>
 
     <div style="font-size:15px;color:var(--suave);line-height:1.6;">Gracias por usar el portero digital<br>de Blanco Encalada 3225.</div>
 
-    <button onclick="window.close()" style="margin-top:8px;padding:14px 32px;background:var(--dorado);color:#111;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:1px;">Cerrar</button>
+    <button onclick="window.close()" style="margin-top:8px;padding:14px 32px;background:var(--dorado);color:#111;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:2px;">Cerrar</button>
 
   </div>
-
 
 
 <!-- Firebase — múltiples CDN como fallback -->
@@ -382,8 +359,6 @@ window.addEventListener('load', function() {
 
 </script>
 
-
-
 <script>
 
 /* =========================================================
@@ -411,15 +386,12 @@ const firebaseConfig = {
 };
 
 
-
 /* ── Editá solo estos dos si hace falta ── */
 
 const DEPTOS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
 
-
 /* ========================================================= */
-
 
 
 const ICE = { iceServers: [
@@ -431,9 +403,7 @@ const ICE = { iceServers: [
 ]};
 
 
-
 let db, pc, localStream, callRef, llamadaConectada = false, wakeLock = null;
-
 
 
 function d(id, tipo, txt) {
@@ -457,7 +427,6 @@ function d(id, tipo, txt) {
 }
 
 
-
 function sdkError() {
 
   d('d1', 'err', 'No se pudo cargar el SDK de Firebase (sin internet?)');
@@ -465,11 +434,9 @@ function sdkError() {
 }
 
 
-
 function sdkListo() {
 
   d('d1', 'ok', 'Firebase SDK cargado');
-
 
 
   // Verificación rápida: el campo más crítico es apiKey
@@ -491,7 +458,6 @@ function sdkListo() {
   }
 
 
-
   try {
 
     firebase.initializeApp(firebaseConfig);
@@ -507,7 +473,6 @@ function sdkListo() {
   }
 
 
-
   try {
 
     db = firebase.database();
@@ -519,7 +484,6 @@ function sdkListo() {
     return;
 
   }
-
 
 
   // Verificar conectividad real con Firebase
@@ -541,7 +505,6 @@ function sdkListo() {
   });
 
 
-
   // Fallback: si en 8s no confirmó conexión igual mostramos (puede ser offline mode)
 
   setTimeout(function() {
@@ -557,7 +520,6 @@ function sdkListo() {
   }, 8000);
 
 }
-
 
 
 function mostrarListo() {
@@ -587,7 +549,6 @@ function mostrarListo() {
 }
 
 
-
 function renderGrid() {
 
   const g = document.getElementById('grid');
@@ -600,7 +561,7 @@ function renderGrid() {
 
     btn.className = 'depto-btn';
 
-    btn.innerHTML = '<span class="depto-num">' + n + '</span><span class="depto-label">Depto</span>';
+    btn.innerHTML = '<span class="depto-num">' + n + '</span>';
 
     btn.onclick = function() { llamar(n); };
 
@@ -611,13 +572,11 @@ function renderGrid() {
 }
 
 
-
 /* ── LLAMADA ── */
 
 async function llamar(n) {
 
   window.location.href = 'https://wwccrrss.github.io/blancoencalada3225/llamada-visitante.html?depto=' + n;
-
 }
 
 async function llamar_UNUSED(n) {
@@ -628,13 +587,9 @@ async function llamar_UNUSED(n) {
 
   setEstado('Conectando...');
 
-
-
   // Generar callId ANTES del try para incluirlo en ntfy
 
   const callId = 'call_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-
-
 
   // Mantener pantalla encendida durante la llamada
 
@@ -647,8 +602,6 @@ async function llamar_UNUSED(n) {
     }).catch(function() {});
 
   }
-
-
 
   // ntfy — enviar ANTES de cualquier async/await
 
@@ -674,8 +627,6 @@ async function llamar_UNUSED(n) {
 
   }).then(r => console.log('ntfy status:', r.status)).catch(e => console.log('ntfy error:', e));
 
-
-
   try {
 
     // 1. PRIMERO registrar la llamada en Firebase (antes de pedir cámara)
@@ -693,8 +644,6 @@ async function llamar_UNUSED(n) {
     });
 
     setEstado('Llamando... activando cámara');
-
-
 
     // 2. DESPUÉS pedir cámara y micrófono (puede fallar sin romper la llamada)
 
@@ -723,11 +672,9 @@ async function llamar_UNUSED(n) {
     }
 
 
-
     // 3. Crear PeerConnection
 
     pc = new RTCPeerConnection(ICE);
-
 
 
     if (localStream) {
@@ -735,7 +682,6 @@ async function llamar_UNUSED(n) {
       localStream.getTracks().forEach(function(t) { pc.addTrack(t, localStream); });
 
     }
-
 
 
     pc.ontrack = function(e) {
@@ -753,13 +699,11 @@ async function llamar_UNUSED(n) {
     };
 
 
-
     pc.onicecandidate = function(e) {
 
       if (e.candidate) callRef.child('visitorCandidates').push(e.candidate.toJSON());
 
     };
-
 
 
     const offer = await pc.createOffer();
@@ -769,7 +713,6 @@ async function llamar_UNUSED(n) {
     await callRef.update({ offer: { type: offer.type, sdp: offer.sdp } });
 
     setEstado('Esperando respuesta...');
-
 
 
     callRef.child('answer').on('value', async function(snap) {
@@ -791,13 +734,11 @@ async function llamar_UNUSED(n) {
     });
 
 
-
     callRef.child('residentCandidates').on('child_added', async function(snap) {
 
       if (snap.val() && pc) try { await pc.addIceCandidate(new RTCIceCandidate(snap.val())); } catch(e) {}
 
     });
-
 
 
     callRef.child('status').on('value', function(snap) {
@@ -813,7 +754,6 @@ async function llamar_UNUSED(n) {
     });
 
 
-
     setTimeout(function() {
 
       if (!llamadaConectada) {
@@ -823,8 +763,6 @@ async function llamar_UNUSED(n) {
       }
 
     }, 90000);
-
-
 
   } catch(err) {
 
@@ -837,13 +775,11 @@ async function llamar_UNUSED(n) {
 }
 
 
-
 async function colgar(notif) {
 
   llamadaConectada = false;
 
   if (wakeLock) { try { wakeLock.release(); } catch(e) {} wakeLock = null; }
-
 
 
   if (notif !== false && callRef) { try { await callRef.update({ status: 'ended' }); } catch(e) {} }
@@ -867,7 +803,6 @@ async function colgar(notif) {
 }
 
 
-
 function setEstado(txt, cls) {
 
   const el = document.getElementById('estado');
@@ -877,7 +812,6 @@ function setEstado(txt, cls) {
   el.className = 'estado' + (cls ? ' ' + cls : '');
 
 }
-
 
 
 function toast(msg) {
